@@ -571,19 +571,12 @@ final class GithubWebhookSubscription extends SubscriptionHandler {
 
   Future<void> _checkForTests(PullRequestEvent pullRequestEvent) async {
     final pr = pullRequestEvent.pullRequest!;
-    // We do not need to add test labels if this is an auto roller author.
-    if (config.rollerAccounts.contains(pr.user!.login)) {
-      return;
-    }
     final eventAction = pullRequestEvent.action;
     final slug = pr.base!.repo!.slug();
     final isTipOfTree = pr.base!.ref == Config.defaultBranch(slug);
     final gitHubClient = await config.createGitHubClient(pullRequest: pr);
     await _validateRefs(gitHubClient, pr);
     if (kNeedsTests.contains(slug) && isTipOfTree) {
-      log.info(
-        'Applying framework repo labels for: owner=${slug.owner} repo=${slug.name} and pr=${pr.number}',
-      );
       switch (slug.name) {
         case 'flutter':
           final isFusion = slug == Config.flutterSlug;
@@ -594,16 +587,15 @@ final class GithubWebhookSubscription extends SubscriptionHandler {
             gitHubClient,
             eventAction,
             pr,
-            files,
-            slug,
+            isFusion: isFusion,
+            files: files,
           );
           if (isFusion) {
             await _applyEngineRepoLabels(
               gitHubClient,
               eventAction,
               pr,
-              files,
-              slug,
+              files: files,
             );
           }
         case 'packages':
@@ -615,13 +607,22 @@ final class GithubWebhookSubscription extends SubscriptionHandler {
   Future<void> _applyFrameworkRepoLabels(
     GitHub gitHubClient,
     String? eventAction,
-    PullRequest pr,
-    List<PullRequestFile> files,
-    RepositorySlug slug,
-  ) async {
+    PullRequest pr, {
+    bool isFusion = false,
+    List<PullRequestFile>? files,
+  }) async {
     if (pr.user!.login == 'engine-flutter-autoroll') {
       return;
     }
+
+    final slug = pr.base!.repo!.slug();
+    log.info(
+      'Applying framework repo labels for: owner=${slug.owner} repo=${slug.name} isFusion=$isFusion and pr=${pr.number}',
+    );
+
+    files ??= await gitHubClient.pullRequests
+        .listFiles(slug, pr.number!)
+        .toList();
 
     final labels = <String>{};
     var hasTests = false;
@@ -665,6 +666,11 @@ final class GithubWebhookSubscription extends SubscriptionHandler {
         pr.number!,
         labels.toList(),
       );
+    }
+
+    // We do not need to add test labels if this is an auto roller author.
+    if (config.rollerAccounts.contains(pr.user!.login)) {
+      return;
     }
 
     if (!hasTests &&
@@ -748,15 +754,15 @@ final class GithubWebhookSubscription extends SubscriptionHandler {
   Future<void> _applyEngineRepoLabels(
     GitHub gitHubClient,
     String? eventAction,
-    PullRequest pr,
-    List<PullRequestFile> files,
-    RepositorySlug slug,
-  ) async {
+    PullRequest pr, {
+    List<PullRequestFile>? files,
+  }) async {
     // Do not apply the test labels for the autoroller accounts.
     if (pr.user!.login == 'skia-flutter-autoroll') {
       return;
     }
 
+    final slug = pr.base!.repo!.slug();
     var hasTests = false;
     var needsTests = false;
 
@@ -766,6 +772,9 @@ final class GithubWebhookSubscription extends SubscriptionHandler {
 
     var engineFiles = 0;
 
+    files ??= await gitHubClient.pullRequests
+        .listFiles(slug, pr.number!)
+        .toList();
     for (var file in files) {
       final path = file.filename!;
       if (isFusion && _isFusionEnginePath(path)) {
@@ -788,6 +797,11 @@ final class GithubWebhookSubscription extends SubscriptionHandler {
 
     if (isFusion && engineFiles == 0) {
       // framework only change
+      return;
+    }
+
+    // We do not need to add test labels if this is an auto roller author.
+    if (config.rollerAccounts.contains(pr.user!.login)) {
       return;
     }
 
@@ -866,6 +880,11 @@ final class GithubWebhookSubscription extends SubscriptionHandler {
           filename.contains('go_router_builder/test_inputs/')) {
         hasTests = true;
       }
+    }
+
+    // We do not need to add test labels if this is an auto roller author.
+    if (config.rollerAccounts.contains(pr.user!.login)) {
+      return;
     }
 
     if (!hasTests &&
