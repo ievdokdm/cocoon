@@ -167,6 +167,8 @@ extension _YamlMapToMap on YamlMap {
         '$key': value.asMap
       else if (value is YamlList)
         '$key': value.asList
+      else if (value is YamlScalar)
+        '$key': value.value
       else
         '$key': value,
   };
@@ -174,12 +176,14 @@ extension _YamlMapToMap on YamlMap {
 
 extension _YamlListToList on YamlList {
   List<Object?> get asList => <Object?>[
-    for (final value in nodes)
-      if (value is YamlMap)
-        value.asMap
-      else if (value is YamlList)
-        value.asList
+    for (final node in nodes)
+      if (node is YamlMap)
+        node.asMap
+      else if (node is YamlList)
+        node.asList
+      else if (node is YamlScalar)
+        node.value
       else
-        value,
+        node,
   ];
 }
