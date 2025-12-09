@@ -26,3 +26,9 @@ unifiedCheckRunFlow:
     - matanlurey
 # Whether to allow the tree status to be suppressed for specific failed tests.
 dynamicTestSuppression: false
+
+consolidatedCheckRunFlow:
+  useForAll: false
+  useForUsers:
+    - dmgr
+    - matanlurey
