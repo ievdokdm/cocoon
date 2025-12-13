@@ -77,7 +77,8 @@ final class UnifiedCheckRunBuildId extends AppDocumentId<UnifiedCheckRunBuild> {
   }
 
   @override
-  AppDocumentMetadata<UnifiedCheckRunBuild> get runtimeMetadata => UnifiedCheckRunBuild.metadata;
+  AppDocumentMetadata<UnifiedCheckRunBuild> get runtimeMetadata =>
+      UnifiedCheckRunBuild.metadata;
 }
 
 final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
@@ -115,7 +116,12 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
     AppDocumentId<UnifiedCheckRunBuild> id,
   ) async {
     final document = await firestoreService.getDocument(
-      p.posix.join(kDatabase, 'documents', kUnifiedCheckRunBuildCollectionId, id.documentId),
+      p.posix.join(
+        kDatabase,
+        'documents',
+        kUnifiedCheckRunBuildCollectionId,
+        id.documentId,
+      ),
     );
     return UnifiedCheckRunBuild.fromDocument(document);
   }

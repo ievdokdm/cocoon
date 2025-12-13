@@ -1,4 +1,4 @@
-// Copyright 2024 The Flutter Authors. All rights reserved.
+// Copyright 2025 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,24 +6,19 @@ library;
 
 import 'package:github/github.dart';
 import 'package:googleapis/firestore/v1.dart' hide Status;
+import 'package:path/path.dart' as p;
 
 import '../../../cocoon_service.dart';
 import '../../service/firestore.dart';
 import 'base.dart';
 
-enum CiStage {
-  engine,
-  fusion,
-}
+enum CiStage { engine, fusion }
 
 final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
   static const collectionId = 'unified_check_runs';
-  static const fieldCheckRunId = 'check_run_id';
   static const fieldCommitSha = 'commit_sha';
-  static const fieldSlug = 'slug';
   static const fieldAuthor = 'author';
   static const fieldPullRequestId = 'pull_request_id';
-  static const fieldStage = 'stage';
   static const fieldCreationTime = 'creation_time';
   static const fieldRemainingBuilds = 'remaining_builds';
   static const fieldFailedBuilds = 'failed_builds';
@@ -32,9 +27,8 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     required RepositorySlug slug,
     required int checkRunId,
     required CiStage stage,
-  }) =>
-      '${slug.owner}_${slug.name}_${checkRunId}_${stage.name}';
-  
+  }) => '${slug.owner}_${slug.name}_${checkRunId}_${stage.name}';
+
   @override
   AppDocumentMetadata<UnifiedCheckRun> get runtimeMetadata => metadata;
 
@@ -54,24 +48,23 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     required int pullRequestId,
     required CiStage stage,
     required int creationTime,
-    String? author,
+    required String author,
     int? remainingBuilds,
     int? failedBuilds,
   }) {
-    final Map<String, Value> fields = {
-      fieldCheckRunId: checkRunId.toValue(),
+    final fields = <String, Value>{
       fieldCommitSha: commitSha.toValue(),
-      fieldSlug: slug.fullName.toValue(),
       fieldPullRequestId: pullRequestId.toValue(),
-      fieldStage: stage.name.toValue(),
       fieldCreationTime: creationTime.toValue(),
-      if (author != null) fieldAuthor: author.toValue(),
-      if (remainingBuilds != null) fieldRemainingBuilds: remainingBuilds.toValue(),
+      fieldAuthor: author.toValue(),
+      if (remainingBuilds != null)
+        fieldRemainingBuilds: remainingBuilds.toValue(),
       if (failedBuilds != null) fieldFailedBuilds: failedBuilds.toValue(),
     };
     return UnifiedCheckRun._(
       fields,
-      name: '$kDatabase/documents/$collectionId/${documentId(slug: slug, checkRunId: checkRunId, stage: stage)}',
+      name:
+          '$kDatabase/documents/$collectionId/${documentId(slug: slug, checkRunId: checkRunId, stage: stage)}',
     );
   }
 
@@ -80,13 +73,35 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     this.name = name;
   }
 
-  int get checkRunId => int.parse(fields[fieldCheckRunId]!.integerValue!);
   String get commitSha => fields[fieldCommitSha]!.stringValue!;
-  RepositorySlug get slug => RepositorySlug.full(fields[fieldSlug]!.stringValue!);
-  String? get author => fields[fieldAuthor]?.stringValue;
+  String get author => fields[fieldAuthor]!.stringValue!;
   int get pullRequestId => int.parse(fields[fieldPullRequestId]!.integerValue!);
-  CiStage get stage => CiStage.values.byName(fields[fieldStage]!.stringValue!);
   int get creationTime => int.parse(fields[fieldCreationTime]!.integerValue!);
-  int? get remainingBuilds => fields[fieldRemainingBuilds] != null ? int.parse(fields[fieldRemainingBuilds]!.integerValue!) : null;
-  int? get failedBuilds => fields[fieldFailedBuilds] != null ? int.parse(fields[fieldFailedBuilds]!.integerValue!) : null;
+  int? get remainingBuilds => fields[fieldRemainingBuilds] != null
+      ? int.parse(fields[fieldRemainingBuilds]!.integerValue!)
+      : null;
+  int? get failedBuilds => fields[fieldFailedBuilds] != null
+      ? int.parse(fields[fieldFailedBuilds]!.integerValue!)
+      : null;
+
+  /// The repository that this stage is recorded for.
+  RepositorySlug get slug {
+    // Read it from the document name.
+    final [owner, repo, _, _, _] = p.posix.basename(name!).split('_');
+    return RepositorySlug(owner, repo);
+  }
+
+  /// Which commit this stage is recorded for.
+  String get checkRunId {
+    // Read it from the document name.
+    final [_, _, _, checkRunId, _] = p.posix.basename(name!).split('_');
+    return checkRunId;
+  }
+
+  /// The stage of the CI process.
+  CiStage get stage {
+    // Read it from the document name.
+    final [_, _, _, _, stageName] = p.posix.basename(name!).split('_');
+    return CiStage.values.byName(stageName);
+  }
 }
