@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+/// @docImport 'unified_check_run.dart';
 library;
 
 import 'package:buildbucket/buildbucket_pb.dart' as bbv2;
@@ -23,7 +24,9 @@ final class UnifiedCheckRunBuildId extends AppDocumentId<UnifiedCheckRunBuild> {
     required this.buildName,
     required this.attemptNumber,
   }) {
-    if (attemptNumber < 1) {
+    if (checkRunId < 1) {
+      throw RangeError.value(checkRunId, 'checkRunId', 'Must be at least 1');
+    } else if (attemptNumber < 1) {
       throw RangeError.value(
         attemptNumber,
         'attemptNumber',
@@ -48,10 +51,10 @@ final class UnifiedCheckRunBuildId extends AppDocumentId<UnifiedCheckRunBuild> {
   /// If could not be parsed, returns `null`.
   static UnifiedCheckRunBuildId? tryParse(String documentName) {
     if (_parseDocumentName.matchAsPrefix(documentName) case final match?) {
-      final checkRunId = match.group(1)!;
+      final checkRunId = int.tryParse(match.group(1)!);
       final buildName = match.group(2)!;
       final attemptNumber = int.tryParse(match.group(3)!);
-      if (attemptNumber != null) {
+      if (checkRunId != null && attemptNumber != null) {
         return UnifiedCheckRunBuildId(
           checkRunId: checkRunId,
           buildName: buildName,
@@ -64,10 +67,12 @@ final class UnifiedCheckRunBuildId extends AppDocumentId<UnifiedCheckRunBuild> {
 
   /// Parses `{checkRunId}_{buildName}_{attemptNumber}`.
   ///
-  /// This is gross because the [buildName] could also include underscores.
-  static final _parseDocumentName = RegExp(r'([a-z0-9]+)_(.*)_([0-9]+)$');
+  /// [buildName] could also include underscores which led us to use regexp .
+  /// But we dont have build number at the moment of creating the document and
+  /// we need to query by checkRunId and buildName for updating the document.
+  static final _parseDocumentName = RegExp(r'([0-9]+)_(.*)_([0-9]+)$');
 
-  final String checkRunId;
+  final int checkRunId;
   final String buildName;
   final int attemptNumber;
 
@@ -92,7 +97,7 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
   static const fieldEndTime = 'endTime';
 
   static AppDocumentId<UnifiedCheckRunBuild> documentIdFor({
-    required String checkRunId,
+    required int checkRunId,
     required String buildName,
     required int attemptNumber,
   }) {
@@ -127,14 +132,14 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
   }
 
   factory UnifiedCheckRunBuild({
-    required String checkRunId,
+    required int checkRunId,
     required String buildName,
-    required int buildNumber,
     required TaskStatus status,
     required int attemptNumber,
     required int creationTime,
-    required int startTime,
-    required int endTime,
+    required int? buildNumber,
+    required int? startTime,
+    required int? endTime,
   }) {
     final id = UnifiedCheckRunBuildId(
       checkRunId: checkRunId,
@@ -145,12 +150,12 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
       {
         fieldCheckRunId: checkRunId.toValue(),
         fieldBuildName: buildName.toValue(),
-        fieldBuildNumber: buildNumber.toValue(),
+        if (buildNumber != null) fieldBuildNumber: buildNumber.toValue(),
         fieldStatus: status.value.toValue(),
         fieldAttemptNumber: attemptNumber.toValue(),
         fieldCreationTime: creationTime.toValue(),
-        fieldStartTime: startTime.toValue(),
-        fieldEndTime: endTime.toValue(),
+        if (startTime != null) fieldStartTime: startTime.toValue(),
+        if (endTime != null) fieldEndTime: endTime.toValue(),
       },
       name: p.posix.join(
         kDatabase,
@@ -165,19 +170,36 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
     return UnifiedCheckRunBuild._(document.fields!, name: document.name!);
   }
 
+  factory UnifiedCheckRunBuild.initial({
+    required String buildName,
+    required int checkRunId,
+    required int creationTime,
+  }) {
+    return UnifiedCheckRunBuild(
+      buildName: buildName,
+      attemptNumber: 1,
+      checkRunId: checkRunId,
+      creationTime: creationTime,
+      status: TaskStatus.waitingForBackfill,
+      buildNumber: null,
+      startTime: null,
+      endTime: null,
+    );
+  }
+
   UnifiedCheckRunBuild._(Map<String, Value> fields, {required String name}) {
     this
       ..fields = fields
       ..name = name;
   }
 
-  String get checkRunId => fields[fieldCheckRunId]!.stringValue!;
+  int get checkRunId => int.parse(fields[fieldCheckRunId]!.stringValue!);
   String get buildName => fields[fieldBuildName]!.stringValue!;
-  int get buildNumber => int.parse(fields[fieldBuildNumber]!.integerValue!);
   int get attemptNumber => int.parse(fields[fieldAttemptNumber]!.integerValue!);
   int get creationTime => int.parse(fields[fieldCreationTime]!.integerValue!);
-  int get startTime => int.parse(fields[fieldStartTime]!.integerValue!);
-  int get endTime => int.parse(fields[fieldEndTime]!.integerValue!);
+  int? get buildNumber => int.parse(fields[fieldBuildNumber]!.integerValue!);
+  int? get startTime => int.parse(fields[fieldStartTime]!.integerValue!);
+  int? get endTime => int.parse(fields[fieldEndTime]!.integerValue!);
 
   TaskStatus get status {
     final rawValue = fields[fieldStatus]!.stringValue!;
@@ -198,14 +220,20 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
         .toDateTime()
         .millisecondsSinceEpoch
         .toValue();
-    fields[fieldStartTime] = build.startTime
-        .toDateTime()
-        .millisecondsSinceEpoch
-        .toValue();
-    fields[fieldEndTime] = build.endTime
-        .toDateTime()
-        .millisecondsSinceEpoch
-        .toValue();
+
+    if (build.hasStartTime()) {
+      fields[fieldStartTime] = build.startTime
+          .toDateTime()
+          .millisecondsSinceEpoch
+          .toValue();
+    }
+
+    if (build.hasEndTime()) {
+      fields[fieldEndTime] = build.endTime
+          .toDateTime()
+          .millisecondsSinceEpoch
+          .toValue();
+    }
     _setStatusFromLuciStatus(build);
   }
 
