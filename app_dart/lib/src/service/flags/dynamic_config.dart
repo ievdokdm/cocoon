@@ -40,6 +40,7 @@ final class DynamicConfig {
     contentAwareHashing: ContentAwareHashing.defaultInstance,
     closeMqGuardAfterPresubmit: false,
     unifiedCheckRunFlow: UnifiedCheckRunFlow.defaultInstance,
+    dynamicTestSuppression: false,
   );
 
   /// Upper limit of commit rows to be backfilled in API call.
@@ -66,12 +67,17 @@ final class DynamicConfig {
   @JsonKey()
   final UnifiedCheckRunFlow unifiedCheckRunFlow;
 
+  /// Whether to allow the tree status to be suppressed for specific failed tests.
+  @JsonKey()
+  final bool dynamicTestSuppression;
+
   const DynamicConfig._({
     required this.backfillerCommitLimit,
     required this.ciYaml,
     required this.contentAwareHashing,
     required this.closeMqGuardAfterPresubmit,
     required this.unifiedCheckRunFlow,
+    required this.dynamicTestSuppression,
   });
 
   /// Creates [DynamicConfig] flags from a [json] object.
@@ -83,6 +89,7 @@ final class DynamicConfig {
     ContentAwareHashing? contentAwareHashing,
     bool? closeMqGuardAfterPresubmit,
     UnifiedCheckRunFlow? unifiedCheckRunFlow,
+    bool? dynamicTestSuppression,
   }) {
     return DynamicConfig._(
       backfillerCommitLimit:
@@ -95,6 +102,8 @@ final class DynamicConfig {
           defaultInstance.closeMqGuardAfterPresubmit,
       unifiedCheckRunFlow:
           unifiedCheckRunFlow ?? defaultInstance.unifiedCheckRunFlow,
+      dynamicTestSuppression:
+          dynamicTestSuppression ?? defaultInstance.dynamicTestSuppression,
     );
   }
 

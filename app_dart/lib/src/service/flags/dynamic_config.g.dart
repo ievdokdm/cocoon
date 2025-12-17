@@ -25,6 +25,7 @@ DynamicConfig _$DynamicConfigFromJson(Map<String, dynamic> json) =>
           : UnifiedCheckRunFlow.fromJson(
               json['unifiedCheckRunFlow'] as Map<String, dynamic>?,
             ),
+      dynamicTestSuppression: json['dynamicTestSuppression'] as bool?,
     );
 
 Map<String, dynamic> _$DynamicConfigToJson(DynamicConfig instance) =>
@@ -34,4 +35,5 @@ Map<String, dynamic> _$DynamicConfigToJson(DynamicConfig instance) =>
       'ciYaml': instance.ciYaml.toJson(),
       'closeMqGuardAfterPresubmit': instance.closeMqGuardAfterPresubmit,
       'unifiedCheckRunFlow': instance.unifiedCheckRunFlow.toJson(),
+      'dynamicTestSuppression': instance.dynamicTestSuppression,
     };

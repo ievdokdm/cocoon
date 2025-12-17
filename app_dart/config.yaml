@@ -19,8 +19,10 @@ contentAwareHashing:
 # instead of doing that as part of the `check_run` GitHub event handling.
 closeMqGuardAfterPresubmit: true
 
-consolidatedCheckRunFlow:
+unifiedCheckRunFlow:
   useForAll: false
   useForUsers:
     - dmgr
     - matanlurey
+# Whether to allow the tree status to be suppressed for specific failed tests.
+dynamicTestSuppression: false
