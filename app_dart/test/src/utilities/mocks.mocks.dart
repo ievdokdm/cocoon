@@ -15,7 +15,7 @@ import 'package:cocoon_service/src/foundation/github_checks_util.dart' as _i10;
 import 'package:cocoon_service/src/model/ci_yaml/ci_yaml.dart' as _i41;
 import 'package:cocoon_service/src/model/ci_yaml/target.dart' as _i28;
 import 'package:cocoon_service/src/model/commit_ref.dart' as _i32;
-import 'package:cocoon_service/src/model/firestore/ci_staging.dart' as _i40;
+import 'package:cocoon_service/src/model/firestore/base.dart' as _i40;
 import 'package:cocoon_service/src/model/firestore/commit.dart' as _i38;
 import 'package:cocoon_service/src/model/firestore/task.dart' as _i33;
 import 'package:cocoon_service/src/model/github/checks.dart' as _i31;
@@ -4075,12 +4075,14 @@ class MockLuciBuildService extends _i1.Mock implements _i17.LuciBuildService {
     required List<_i28.Target>? targets,
     required _i7.PullRequest? pullRequest,
     required _i29.EngineArtifacts? engineArtifacts,
+    required _i7.CheckRun? checkRunGuard,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#scheduleTryBuilds, [], {
               #targets: targets,
               #pullRequest: pullRequest,
               #engineArtifacts: engineArtifacts,
+              #checkRunGuard: checkRunGuard,
             }),
             returnValue: _i13.Future<List<_i28.Target>>.value(<_i28.Target>[]),
           )

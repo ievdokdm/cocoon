@@ -20,7 +20,9 @@ import '../foundation/utils.dart';
 import '../model/ci_yaml/ci_yaml.dart';
 import '../model/ci_yaml/target.dart';
 import '../model/commit_ref.dart';
+import '../model/firestore/base.dart';
 import '../model/firestore/ci_staging.dart';
+import '../model/firestore/checks.dart';
 import '../model/firestore/commit.dart' as fs;
 import '../model/firestore/pr_check_runs.dart';
 import '../model/firestore/task.dart' as fs;
@@ -367,18 +369,19 @@ class Scheduler {
               'triggerPresubmitTargets($slug, $sha){frameworkOnly}';
           log.info('$logCrumb: FRAMEWORK_ONLY_TESTING_PR');
 
-          await CiStaging.initializeDocument(
+          await Checks.initializeCiStagingDocument(
             firestoreService: _firestore,
             slug: slug,
             sha: sha,
             stage: CiStage.fusionEngineBuild,
             tasks: [],
-            checkRunGuard: '',
+            pullRequest: pullRequest,
+            config: _config,
           );
 
           await _runCiTestingStage(
             pullRequest: pullRequest,
-            checkRunGuard: '$lock',
+            checkRunGuard: lock,
             logCrumb: logCrumb,
 
             // The if-branch already skips the engine build phase.
@@ -404,13 +407,15 @@ class Scheduler {
         // to complete before we can schedule more tests (i.e. build engine artifacts before testing against them).
         final EngineArtifacts engineArtifacts;
         if (isFusion) {
-          await CiStaging.initializeDocument(
+          await Checks.initializeCiStagingDocument(
             firestoreService: _firestore,
             slug: slug,
             sha: sha,
             stage: CiStage.fusionEngineBuild,
             tasks: [...presubmitTriggerTargets.map((t) => t.name)],
-            checkRunGuard: '$lock',
+            pullRequest: pullRequest,
+            config: _config,
+            checkRun: lock,
           );
 
           // Even though this appears to be an engine build, it could be a
@@ -432,6 +437,7 @@ class Scheduler {
           targets: presubmitTriggerTargets,
           pullRequest: pullRequest,
           engineArtifacts: engineArtifacts,
+          checkRunGuard: lock,
         );
       } on FormatException catch (e, s) {
         log.warn(
@@ -557,7 +563,7 @@ class Scheduler {
       }
     }
     log.info('$logCrumb: scheduling merge group checks');
-    return triggerTargetsForMergeGroup(
+    return await triggerTargetsForMergeGroup(
       baseRef: baseRef,
       headSha: headSha,
       headRef: headRef,
@@ -624,13 +630,14 @@ class Scheduler {
 
       // Create the staging doc that will track our engine progress and allow us to unlock
       // the merge group lock later.
-      await CiStaging.initializeDocument(
+      await Checks.initializeCiStagingDocument(
         firestoreService: _firestore,
         slug: slug,
         sha: headSha,
         stage: CiStage.fusionEngineBuild,
         tasks: [...availableTargets.map((t) => t.name)],
-        checkRunGuard: '$lock',
+        config: _config,
+        checkRun: lock,
       );
 
       // Create the minimal Commit needed to pass the next stage.
@@ -1177,7 +1184,7 @@ $s
   /// Schedules post-engine build tests (i.e. engine tests, and framework tests).
   Future<void> _runCiTestingStage({
     required PullRequest pullRequest,
-    required String checkRunGuard,
+    required CheckRun checkRunGuard,
     required String logCrumb,
     required _FlutterRepoTestsToRun testsToRun,
   }) async {
@@ -1221,13 +1228,15 @@ $s
           tasks = [...presubmitTargets.map((t) => t.name)];
         }
 
-        await CiStaging.initializeDocument(
+        await Checks.initializeCiStagingDocument(
           firestoreService: _firestore,
           slug: pullRequest.base!.repo!.slug(),
           sha: pullRequest.head!.sha!,
           stage: CiStage.fusionTests,
           tasks: tasks,
-          checkRunGuard: checkRunGuard,
+          config: _config,
+          pullRequest: pullRequest,
+          checkRun: checkRunGuard,
         );
 
         // Here is where it gets fun: how do framework tests* know what engine
@@ -1254,6 +1263,7 @@ $s
           targets: presubmitTargets,
           pullRequest: pullRequest,
           engineArtifacts: engineArtifacts,
+          checkRunGuard: checkRunGuard,
         );
       }
     } on FormatException catch (e, s) {
@@ -1313,7 +1323,7 @@ $s
     try {
       await _runCiTestingStage(
         pullRequest: pullRequest,
-        checkRunGuard: '$checkRunGuard',
+        checkRunGuard: checkRunGuard,
         logCrumb: logCrumb,
         testsToRun: _FlutterRepoTestsToRun.engineTestsAndFrameworkTests,
       );
@@ -1509,6 +1519,7 @@ $stacktrace
                 targets: [target],
                 pullRequest: pullRequest,
                 engineArtifacts: engineArtifacts,
+                checkRunGuard: null,
               );
             } else {
               log.debug('Rescheduling postsubmit build.');

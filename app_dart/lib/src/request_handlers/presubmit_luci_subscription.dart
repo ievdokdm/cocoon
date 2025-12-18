@@ -120,13 +120,15 @@ final class PresubmitLuciSubscription extends SubscriptionHandler {
         );
       }
     }
-    await _githubChecksService.updateCheckStatus(
-      checkRunId: userData.checkRunId,
-      build: build,
-      luciBuildService: _luciBuildService,
-      slug: userData.commit.slug,
-      rescheduled: rescheduled,
-    );
+    if (userData.checkRunId != null) {
+      await _githubChecksService.updateCheckStatus(
+        checkRunId: userData.checkRunId!,
+        build: build,
+        luciBuildService: _luciBuildService,
+        slug: userData.commit.slug,
+        rescheduled: rescheduled,
+      );
+    }
 
     if (!rescheduled && config.flags.closeMqGuardAfterPresubmit) {
       // Process to the check-run status in the merge queue document during

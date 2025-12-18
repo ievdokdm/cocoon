@@ -14,9 +14,9 @@ import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 import 'ci_yaml_flags.dart';
-import 'consolidated_check_run_flow_flags.dart';
 import 'content_aware_hashing_flags.dart';
 import 'dynamic_config_updater.dart';
+import 'unified_check_run_flow_flags.dart';
 
 part 'dynamic_config.g.dart';
 
@@ -39,7 +39,7 @@ final class DynamicConfig {
     ciYaml: CiYamlFlags.defaultInstance,
     contentAwareHashing: ContentAwareHashing.defaultInstance,
     closeMqGuardAfterPresubmit: false,
-    consolidatedCheckRunFlow: ConsolidatedCheckRunFlow.defaultInstance,
+    unifiedCheckRunFlow: UnifiedCheckRunFlow.defaultInstance,
   );
 
   /// Upper limit of commit rows to be backfilled in API call.
@@ -62,16 +62,16 @@ final class DynamicConfig {
   @JsonKey()
   final bool closeMqGuardAfterPresubmit;
 
-  /// Flags related tp consolidated check-run flow configuration.
+  /// Flags related tp unified check-run flow configuration.
   @JsonKey()
-  final ConsolidatedCheckRunFlow consolidatedCheckRunFlow;
+  final UnifiedCheckRunFlow unifiedCheckRunFlow;
 
   const DynamicConfig._({
     required this.backfillerCommitLimit,
     required this.ciYaml,
     required this.contentAwareHashing,
     required this.closeMqGuardAfterPresubmit,
-    required this.consolidatedCheckRunFlow,
+    required this.unifiedCheckRunFlow,
   });
 
   /// Creates [DynamicConfig] flags from a [json] object.
@@ -82,7 +82,7 @@ final class DynamicConfig {
     CiYamlFlags? ciYaml,
     ContentAwareHashing? contentAwareHashing,
     bool? closeMqGuardAfterPresubmit,
-    ConsolidatedCheckRunFlow? consolidatedCheckRunFlow,
+    UnifiedCheckRunFlow? unifiedCheckRunFlow,
   }) {
     return DynamicConfig._(
       backfillerCommitLimit:
@@ -93,8 +93,8 @@ final class DynamicConfig {
       closeMqGuardAfterPresubmit:
           closeMqGuardAfterPresubmit ??
           defaultInstance.closeMqGuardAfterPresubmit,
-      consolidatedCheckRunFlow:
-          consolidatedCheckRunFlow ?? defaultInstance.consolidatedCheckRunFlow,
+      unifiedCheckRunFlow:
+          unifiedCheckRunFlow ?? defaultInstance.unifiedCheckRunFlow,
     );
   }
 
@@ -143,11 +143,11 @@ final class DynamicConfig {
   /// The inverse operation of [DynamicConfig.fromJson].
   Map<String, Object?> toJson() => _$DynamicConfigToJson(this);
 
-  bool isConsolidatedCheckRunFlowEnabledForUser(String githubUsername) {
-    if (consolidatedCheckRunFlow.useForAll) {
+  bool isUnifiedCheckRunFlowEnabledForUser(String githubUsername) {
+    if (unifiedCheckRunFlow.useForAll) {
       return true;
     }
-    return consolidatedCheckRunFlow.useForUsers.contains(githubUsername);
+    return unifiedCheckRunFlow.useForUsers.contains(githubUsername);
   }
 }
 

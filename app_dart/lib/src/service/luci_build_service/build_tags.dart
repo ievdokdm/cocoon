@@ -320,6 +320,16 @@ final class GitHubCheckRunIdBuildTag extends BuildTag {
   final int checkRunId;
 }
 
+/// A link back to the GitHub checkRun for this build.
+final class GuardCheckRunIdBuildTag extends BuildTag {
+  static const _keyName = 'guard_checkrun';
+  GuardCheckRunIdBuildTag({required this.checkRunId})
+    : super(_keyName, '$checkRunId');
+
+  /// ID of the checkRun.
+  final int checkRunId;
+}
+
 /// A build tag that specifies the ID of the scheduling job.
 ///
 /// For Flutter, this is always `flutter/{Build Target}`.

@@ -95,6 +95,7 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
   static const fieldCreationTime = 'creationTime';
   static const fieldStartTime = 'startTime';
   static const fieldEndTime = 'endTime';
+  static const fieldSummary = 'summary';
 
   static AppDocumentId<UnifiedCheckRunBuild> documentIdFor({
     required int checkRunId,
@@ -137,9 +138,10 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
     required TaskStatus status,
     required int attemptNumber,
     required int creationTime,
-    required int? buildNumber,
-    required int? startTime,
-    required int? endTime,
+    int? buildNumber,
+    int? startTime,
+    int? endTime,
+    String? summary,
   }) {
     final id = UnifiedCheckRunBuildId(
       checkRunId: checkRunId,
@@ -156,6 +158,7 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
         fieldCreationTime: creationTime.toValue(),
         if (startTime != null) fieldStartTime: startTime.toValue(),
         if (endTime != null) fieldEndTime: endTime.toValue(),
+        if (summary != null) fieldSummary: summary.toValue(),
       },
       name: p.posix.join(
         kDatabase,
@@ -170,7 +173,7 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
     return UnifiedCheckRunBuild._(document.fields!, name: document.name!);
   }
 
-  factory UnifiedCheckRunBuild.initial({
+  factory UnifiedCheckRunBuild.init({
     required String buildName,
     required int checkRunId,
     required int creationTime,
@@ -184,6 +187,7 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
       buildNumber: null,
       startTime: null,
       endTime: null,
+      summary: null,
     );
   }
 
@@ -197,9 +201,16 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
   String get buildName => fields[fieldBuildName]!.stringValue!;
   int get attemptNumber => int.parse(fields[fieldAttemptNumber]!.integerValue!);
   int get creationTime => int.parse(fields[fieldCreationTime]!.integerValue!);
-  int? get buildNumber => int.parse(fields[fieldBuildNumber]!.integerValue!);
-  int? get startTime => int.parse(fields[fieldStartTime]!.integerValue!);
-  int? get endTime => int.parse(fields[fieldEndTime]!.integerValue!);
+  int? get buildNumber => fields[fieldBuildNumber] != null
+      ? int.parse(fields[fieldBuildNumber]!.integerValue!)
+      : null;
+  int? get startTime => fields[fieldStartTime] != null
+      ? int.parse(fields[fieldStartTime]!.integerValue!)
+      : null;
+  int? get endTime => fields[fieldEndTime] != null
+      ? int.parse(fields[fieldEndTime]!.integerValue!)
+      : null;
+  String? get summary => fields[fieldSummary]?.stringValue;
 
   TaskStatus get status {
     final rawValue = fields[fieldStatus]!.stringValue!;
@@ -212,6 +223,10 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
 
   void setEndTime(int endTime) {
     fields[fieldEndTime] = endTime.toValue();
+  }
+
+  void setSummary(String summary) {
+    fields[fieldSummary] = summary.toValue();
   }
 
   void updateFromBuild(bbv2.Build build) {
@@ -242,5 +257,64 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
       return;
     }
     setStatus(build.status.toTaskStatus());
+  }
+
+  /// Returns _all_ builds running against the speificed [checkRunId].
+  Future<List<UnifiedCheckRunBuild>> queryAllBuildsForCheckRun({
+    required FirestoreService firestoreService,
+    required int checkRunId,
+    TaskStatus? status,
+    String? buildName,
+    Transaction? transaction,
+  }) async {
+    return await _queryUnifiedCheckRunBuild(
+      firestoreService: firestoreService,
+      checkRunId: checkRunId,
+      buildName: buildName,
+      status: status,
+      transaction: transaction,
+    );
+  }
+
+  /// Returns _all_ build attempts forthe speificed [checkRunId] and [buildName].
+  Future<List<UnifiedCheckRunBuild>> queryAllBuildAttempts({
+    required FirestoreService firestoreService,
+    required int checkRunId,
+    required String? buildName,
+    Transaction? transaction,
+  }) async {
+    return await _queryUnifiedCheckRunBuild(
+      firestoreService: firestoreService,
+      checkRunId: checkRunId,
+      buildName: buildName,
+      status: null,
+      transaction: transaction,
+    );
+  }
+
+  Future<List<UnifiedCheckRunBuild>> _queryUnifiedCheckRunBuild({
+    required FirestoreService firestoreService,
+    required int checkRunId,
+    String? buildName,
+    TaskStatus? status,
+    Transaction? transaction,
+  }) async {
+    final filterMap = {
+      '${UnifiedCheckRunBuild.fieldCheckRunId} =': checkRunId,
+      if (buildName != null)
+        '${UnifiedCheckRunBuild.fieldBuildName} =': buildName,
+      if (status != null) '${UnifiedCheckRunBuild.fieldStatus} =': status.value,
+    };
+    // For tasks, therer is no reason to _not_ order this way.
+    final orderMap = {
+      UnifiedCheckRunBuild.fieldCreationTime: kQueryOrderDescending,
+    };
+    final documents = await firestoreService.query(
+      kUnifiedCheckRunBuildCollectionId,
+      filterMap,
+      orderMap: orderMap,
+      transaction: transaction,
+    );
+    return [...documents.map(UnifiedCheckRunBuild.fromDocument)];
   }
 }

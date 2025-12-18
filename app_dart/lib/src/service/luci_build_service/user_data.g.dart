@@ -20,11 +20,15 @@ _PresubmitUserData _$PresubmitUserDataFromJson(Map<String, dynamic> json) =>
           commitSha: $checkedConvert('commit_sha', (v) => v as String),
           checkRunId: $checkedConvert(
             'check_run_id',
-            (v) => (v as num).toInt(),
+            (v) => (v as num?)?.toInt(),
           ),
           checkSuiteId: $checkedConvert(
             'check_suite_id',
-            (v) => (v as num?)?.toInt() ?? 0,
+            (v) => (v as num?)?.toInt(),
+          ),
+          guardCheckRunId: $checkedConvert(
+            'guard_check_run_id',
+            (v) => (v as num?)?.toInt(),
           ),
         );
         return val;
@@ -36,6 +40,7 @@ _PresubmitUserData _$PresubmitUserDataFromJson(Map<String, dynamic> json) =>
         'commitSha': 'commit_sha',
         'checkRunId': 'check_run_id',
         'checkSuiteId': 'check_suite_id',
+        'guardCheckRunId': 'guard_check_run_id',
       },
     );
 
@@ -47,6 +52,7 @@ Map<String, dynamic> _$PresubmitUserDataToJson(_PresubmitUserData instance) =>
       'commit_sha': instance.commitSha,
       'check_run_id': instance.checkRunId,
       'check_suite_id': instance.checkSuiteId,
+      'guard_check_run_id': instance.guardCheckRunId,
     };
 
 PostsubmitUserData _$PostsubmitUserDataFromJson(Map<String, dynamic> json) =>
