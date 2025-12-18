@@ -85,14 +85,13 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     required String pullRequestId,
     required String checkRunId,
     required CiStage stage,
-  }) =>
-      UnifiedCheckRunId(
-        owner: slug.owner,
-        repo: slug.name,
-        pullRequestId: pullRequestId,
-        checkRunId: checkRunId,
-        stage: stage,
-      );
+  }) => UnifiedCheckRunId(
+    owner: slug.owner,
+    repo: slug.name,
+    pullRequestId: pullRequestId,
+    checkRunId: checkRunId,
+    stage: stage,
+  );
 
   @override
   AppDocumentMetadata<UnifiedCheckRun> get runtimeMetadata => metadata;
@@ -226,7 +225,8 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     required String buildName,
     required TaskConclusion conclusion,
   }) async {
-    final changeCrumb = '${slug.owner}_${slug.name}_${pullRequestId}_$checkRunId';
+    final changeCrumb =
+        '${slug.owner}_${slug.name}_${pullRequestId}_$checkRunId';
     final logCrumb =
         'markConclusion(${changeCrumb}_$stage, $buildName, $conclusion)';
 
