@@ -3,10 +3,12 @@
 // found in the LICENSE file.
 
 import 'package:buildbucket/buildbucket_pb.dart' as bbv2;
+import 'package:cocoon_common/task_status.dart';
 import 'package:cocoon_server/logging.dart';
 import 'package:github/github.dart' as github;
 
 import '../foundation/github_checks_util.dart';
+import '../model/bbv2_extension.dart';
 import 'config.dart';
 import 'luci_build_service.dart';
 
@@ -111,6 +113,46 @@ class GithubChecksService {
       detailsUrl: url,
       output: output,
     );
+    return true;
+  }
+
+  /// Updates the Github build status using a [BuildPushMessage] sent by LUCI in
+  /// a pub/sub notification.
+  /// Relevant APIs:
+  ///   https://docs.github.com/en/rest/reference/checks#update-a-check-run
+  Future<bool> updateUnifiedCheckRunStatus({
+    required bbv2.Build build,
+    required LuciBuildService luciBuildService,
+    required github.RepositorySlug slug,
+    required int guardCheckRunId,
+    required int currentAttempt,
+    bool rescheduled = false,
+  }) async {
+    var taskStatus = build.status.toTaskStatus();
+    String? summary;
+    // If status has completed with failure then provide more details.
+    if (taskFailed(build.status)) {
+      log.info(
+        'failed presubmit task, ${build.id} has failed, status = ${build.status.toString()}',
+      );
+      if (rescheduled) {
+        taskStatus = TaskStatus.inProgress;
+        summary =
+            'Note: this is an auto rerun. The timestamp above is based on the first attempt of this check run.';
+      } else {
+        // summaryMarkdown should be present
+        final buildbucketBuild = await luciBuildService.getBuildById(
+          build.id,
+          buildMask: bbv2.BuildMask(
+            // Need to use allFields as there is a bug with fieldMask and summaryMarkdown.
+            allFields: true,
+          ),
+        );
+        summary = getGithubSummary(buildbucketBuild.summaryMarkdown);
+        log.debug('Updating check run with summary: $summary');
+      }
+    }
+
     return true;
   }
 

@@ -14,7 +14,34 @@ import '../../../cocoon_service.dart';
 import '../../service/firestore.dart';
 import 'base.dart';
 
-enum CiStage { engine, fusion }
+final class UnifiedCheckRunId extends AppDocumentId<UnifiedCheckRun> {
+  UnifiedCheckRunId({
+    required this.slug,
+    required this.pullRequestId,
+    required this.checkRunId,
+    required this.stage,
+  });
+
+  /// The repository owner/name.
+  final RepositorySlug slug;
+
+  /// The pull request id.
+  final int pullRequestId;
+
+  /// The Check Run Id.
+  final int checkRunId;
+
+  /// The stage of the CI process.
+  final CiStage stage;
+
+  @override
+  String get documentId =>
+      [slug.owner, slug.name, pullRequestId, checkRunId, stage].join('_');
+
+  @override
+  AppDocumentMetadata<UnifiedCheckRun> get runtimeMetadata =>
+      UnifiedCheckRun.metadata;
+}
 
 final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
   static const collectionId = 'unified_check_runs';
@@ -24,13 +51,43 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
   static const fieldRemainingBuilds = 'remaining_builds';
   static const fieldFailedBuilds = 'failed_builds';
 
-  static String documentId({
+  static AppDocumentId<UnifiedCheckRun> documentIdFor({
     required RepositorySlug slug,
     required int pullRequestId,
     required int checkRunId,
     required CiStage stage,
-  }) =>
-      '${slug.owner}_${slug.name}_${pullRequestId}_${checkRunId}_${stage.name}';
+  }) => UnifiedCheckRunId(
+    slug: slug,
+    pullRequestId: pullRequestId,
+    checkRunId: checkRunId,
+    stage: stage,
+  );
+
+  /// Returns a firebase documentName used in [fromFirestore].
+  static String documentNameFor({
+    required RepositorySlug slug,
+    required int pullRequestId,
+    required int checkRunId,
+    required CiStage stage,
+  }) {
+    // Document names cannot cannot have '/' in the document id.
+    final docId = documentIdFor(
+      slug: slug,
+      pullRequestId: pullRequestId,
+      checkRunId: checkRunId,
+      stage: stage,
+    );
+    return '$kDocumentParent/$collectionId/${docId.documentId}';
+  }
+
+  /// Returns the document ID for the given parameters.
+  // static String documentId({
+  //   required RepositorySlug slug,
+  //   required int pullRequestId,
+  //   required int checkRunId,
+  //   required CiStage stage,
+  // }) =>
+  //     '${slug.owner}_${slug.name}_${pullRequestId}_${checkRunId}_${stage.name}';
 
   @override
   AppDocumentMetadata<UnifiedCheckRun> get runtimeMetadata => metadata;
@@ -40,7 +97,7 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     fromDocument: UnifiedCheckRun.fromDocument,
   );
 
-  factory UnifiedCheckRun.initialize({
+  factory UnifiedCheckRun.init({
     required RepositorySlug slug,
     required int pullRequestId,
     required int checkRunId,
@@ -88,8 +145,12 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     };
     return UnifiedCheckRun._(
       fields,
-      name:
-          '$kDatabase/documents/$collectionId/${documentId(slug: slug, pullRequestId: pullRequestId, checkRunId: checkRunId, stage: stage)}',
+      name: documentNameFor(
+        slug: slug,
+        pullRequestId: pullRequestId,
+        checkRunId: checkRunId,
+        stage: stage,
+      ),
     );
   }
 
@@ -176,12 +237,12 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
       final newDoc = await firestoreService.createDocument(
         document,
         collectionId: collectionId,
-        documentId: documentId(
+        documentId: documentIdFor(
           slug: slug,
           pullRequestId: pullRequestId,
           checkRunId: checkRunId,
           stage: stage, //
-        ),
+        ).documentId,
       );
       log.info('$logCrumb: document created');
       return newDoc;

@@ -12,6 +12,7 @@ import 'package:cocoon_server_test/test_logging.dart';
 import 'package:cocoon_service/cocoon_service.dart';
 import 'package:cocoon_service/src/model/ci_yaml/ci_yaml.dart';
 import 'package:cocoon_service/src/model/ci_yaml/target.dart';
+import 'package:cocoon_service/src/model/firestore/base.dart';
 import 'package:cocoon_service/src/model/firestore/ci_staging.dart';
 import 'package:cocoon_service/src/model/firestore/commit.dart' as fs;
 import 'package:cocoon_service/src/model/firestore/pr_check_runs.dart';
@@ -955,6 +956,7 @@ void main() {
             targets: anyNamed('targets'),
             pullRequest: anyNamed('pullRequest'),
             engineArtifacts: anyNamed('engineArtifacts'),
+            checkRunGuard: anyNamed('checkRunGuard'),
           ),
         ).thenAnswer((inv) async {
           return [];
@@ -1368,6 +1370,7 @@ targets:
                 targets: anyNamed('targets'),
                 pullRequest: anyNamed('pullRequest'),
                 engineArtifacts: anyNamed('engineArtifacts'),
+                checkRunGuard: anyNamed('checkRunGuard'),
               ),
             ).thenAnswer((inv) async {
               return [];
@@ -1453,6 +1456,7 @@ targets:
                 targets: captureAnyNamed('targets'),
                 pullRequest: captureAnyNamed('pullRequest'),
                 engineArtifacts: anyNamed('engineArtifacts'),
+                checkRunGuard: anyNamed('checkRunGuard'),
               ),
             );
             expect(result.callCount, 1);
@@ -1505,6 +1509,7 @@ targets:
                   targets: anyNamed('targets'),
                   pullRequest: anyNamed('pullRequest'),
                   engineArtifacts: anyNamed('engineArtifacts'),
+                  checkRunGuard: anyNamed('checkRunGuard'),
                 ),
               ).thenAnswer((inv) async {
                 return [];
@@ -1594,6 +1599,7 @@ targets:
                   targets: captureAnyNamed('targets'),
                   pullRequest: captureAnyNamed('pullRequest'),
                   engineArtifacts: anyNamed('engineArtifacts'),
+                  checkRunGuard: anyNamed('checkRunGuard'),
                 ),
               );
               expect(result.callCount, 1);
@@ -1829,6 +1835,7 @@ targets:
                 targets: anyNamed('targets'),
                 pullRequest: anyNamed('pullRequest'),
                 engineArtifacts: anyNamed('engineArtifacts'),
+                checkRunGuard: anyNamed('checkRunGuard'),
               ),
             ).thenAnswer((Invocation i) async {
               engineArtifacts =
@@ -2152,6 +2159,7 @@ targets:
                   targets: anyNamed('targets'),
                   pullRequest: anyNamed('pullRequest'),
                   engineArtifacts: anyNamed('engineArtifacts'),
+                  checkRunGuard: anyNamed('checkRunGuard'),
                 ),
               ).thenAnswer((inv) async {
                 return [];
@@ -2225,6 +2233,7 @@ targets:
                   targets: captureAnyNamed('targets'),
                   pullRequest: captureAnyNamed('pullRequest'),
                   engineArtifacts: anyNamed('engineArtifacts'),
+                  checkRunGuard: anyNamed('checkRunGuard'),
                 ),
               );
               expect(result.callCount, 1);
@@ -2727,6 +2736,7 @@ targets:
             targets: anyNamed('targets'),
             pullRequest: anyNamed('pullRequest'),
             engineArtifacts: anyNamed('engineArtifacts'),
+            checkRunGuard: anyNamed('checkRunGuard'),
           ),
         ).thenAnswer((inv) async {
           return [];
@@ -2795,6 +2805,7 @@ targets:
             targets: captureAnyNamed('targets'),
             pullRequest: anyNamed('pullRequest'),
             engineArtifacts: anyNamed('engineArtifacts'),
+            checkRunGuard: anyNamed('checkRunGuard'),
           ),
         );
         expect(result.callCount, 1);
@@ -2857,6 +2868,7 @@ targets:
             targets: anyNamed('targets'),
             pullRequest: anyNamed('pullRequest'),
             engineArtifacts: anyNamed('engineArtifacts'),
+            checkRunGuard: anyNamed('checkRunGuard'),
           ),
         ).thenAnswer((inv) async {
           return [];
@@ -2993,6 +3005,7 @@ targets:
             targets: anyNamed('targets'),
             pullRequest: anyNamed('pullRequest'),
             engineArtifacts: anyNamed('engineArtifacts'),
+            checkRunGuard: anyNamed('checkRunGuard'),
           ),
         ).thenAnswer((inv) async {
           return [];
@@ -3121,6 +3134,7 @@ targets:
             targets: anyNamed('targets'),
             pullRequest: anyNamed('pullRequest'),
             engineArtifacts: anyNamed('engineArtifacts'),
+            checkRunGuard: anyNamed('checkRunGuard'),
           ),
         ).thenAnswer((inv) async {
           return [];
@@ -3517,6 +3531,7 @@ final class _CapturingFakeLuciBuildService extends Fake
     required PullRequest pullRequest,
     CheckSuiteEvent? checkSuiteEvent,
     EngineArtifacts? engineArtifacts,
+    CheckRun? checkRunGuard,
   }) async {
     scheduledTryBuilds = targets;
     this.engineArtifacts = engineArtifacts;
