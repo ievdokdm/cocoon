@@ -71,10 +71,6 @@ final class DynamicConfig {
   @JsonKey()
   final bool dynamicTestSuppression;
 
-  /// Whether to allow the tree status to be suppressed for specific failed tests.
-  @JsonKey()
-  final bool dynamicTestSuppression;
-
   const DynamicConfig._({
     required this.backfillerCommitLimit,
     required this.ciYaml,
