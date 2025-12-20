@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/// @docImport 'unified_check_run.dart';
+/// @docImport 'presubmit_check.dart';
 library;
 
 import 'package:buildbucket/buildbucket_pb.dart' as bbv2;
@@ -15,11 +15,11 @@ import '../../service/firestore.dart';
 import '../bbv2_extension.dart';
 import 'base.dart';
 
-const String kUnifiedCheckRunBuildCollectionId = 'unified_check_run_builds';
+const String collectionId = 'presubmit_checks';
 
 @immutable
-final class UnifiedCheckRunBuildId extends AppDocumentId<UnifiedCheckRunBuild> {
-  UnifiedCheckRunBuildId({
+final class PresubmitCheckId extends AppDocumentId<PresubmitCheck> {
+  PresubmitCheckId({
     required this.checkRunId,
     required this.buildName,
     required this.attemptNumber,
@@ -35,27 +35,27 @@ final class UnifiedCheckRunBuildId extends AppDocumentId<UnifiedCheckRunBuild> {
     }
   }
 
-  /// Parse the inverse of [UnifiedCheckRunBuildId.documentName].
-  factory UnifiedCheckRunBuildId.parse(String documentName) {
+  /// Parse the inverse of [PresubmitCheckId.documentName].
+  factory PresubmitCheckId.parse(String documentName) {
     final result = tryParse(documentName);
     if (result == null) {
       throw FormatException(
-        'Unexpected firestore unified check run build document name: "$documentName"',
+        'Unexpected firestore presubmit check document name: "$documentName"',
       );
     }
     return result;
   }
 
-  /// Tries to parse the inverse of [UnifiedCheckRunBuildId.documentName].
+  /// Tries to parse the inverse of [PresubmitCheckId.documentName].
   ///
   /// If could not be parsed, returns `null`.
-  static UnifiedCheckRunBuildId? tryParse(String documentName) {
+  static PresubmitCheckId? tryParse(String documentName) {
     if (_parseDocumentName.matchAsPrefix(documentName) case final match?) {
       final checkRunId = int.tryParse(match.group(1)!);
       final buildName = match.group(2)!;
       final attemptNumber = int.tryParse(match.group(3)!);
       if (checkRunId != null && attemptNumber != null) {
-        return UnifiedCheckRunBuildId(
+        return PresubmitCheckId(
           checkRunId: checkRunId,
           buildName: buildName,
           attemptNumber: attemptNumber,
@@ -82,11 +82,11 @@ final class UnifiedCheckRunBuildId extends AppDocumentId<UnifiedCheckRunBuild> {
   }
 
   @override
-  AppDocumentMetadata<UnifiedCheckRunBuild> get runtimeMetadata =>
-      UnifiedCheckRunBuild.metadata;
+  AppDocumentMetadata<PresubmitCheck> get runtimeMetadata =>
+      PresubmitCheck.metadata;
 }
 
-final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
+final class PresubmitCheck extends AppDocument<PresubmitCheck> {
   static const fieldCheckRunId = 'checkRunId';
   static const fieldBuildName = 'buildName';
   static const fieldBuildNumber = 'buildNumber';
@@ -97,42 +97,52 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
   static const fieldEndTime = 'endTime';
   static const fieldSummary = 'summary';
 
-  static AppDocumentId<UnifiedCheckRunBuild> documentIdFor({
+  static AppDocumentId<PresubmitCheck> documentIdFor({
     required int checkRunId,
     required String buildName,
     required int attemptNumber,
   }) {
-    return UnifiedCheckRunBuildId(
+    return PresubmitCheckId(
       checkRunId: checkRunId,
       buildName: buildName,
       attemptNumber: attemptNumber,
     );
   }
 
-  @override
-  AppDocumentMetadata<UnifiedCheckRunBuild> get runtimeMetadata => metadata;
-
-  static final metadata = AppDocumentMetadata<UnifiedCheckRunBuild>(
-    collectionId: kUnifiedCheckRunBuildCollectionId,
-    fromDocument: UnifiedCheckRunBuild.fromDocument,
-  );
-
-  static Future<UnifiedCheckRunBuild> fromFirestore(
-    FirestoreService firestoreService,
-    AppDocumentId<UnifiedCheckRunBuild> id,
-  ) async {
-    final document = await firestoreService.getDocument(
-      p.posix.join(
-        kDatabase,
-        'documents',
-        kUnifiedCheckRunBuildCollectionId,
-        id.documentId,
-      ),
+  /// Returns a firebase documentName used in [fromFirestore].
+  static String documentNameFor({
+    required int checkRunId,
+    required String buildName,
+    required int attemptNumber,
+  }) {
+    // Document names cannot cannot have '/' in the document id.
+    final docId = documentIdFor(
+      checkRunId: checkRunId,
+      buildName: buildName,
+      attemptNumber: attemptNumber,
     );
-    return UnifiedCheckRunBuild.fromDocument(document);
+    return '$kDocumentParent/$collectionId/${docId.documentId}';
   }
 
-  factory UnifiedCheckRunBuild({
+  @override
+  AppDocumentMetadata<PresubmitCheck> get runtimeMetadata => metadata;
+
+  static final metadata = AppDocumentMetadata<PresubmitCheck>(
+    collectionId: collectionId,
+    fromDocument: PresubmitCheck.fromDocument,
+  );
+
+  static Future<PresubmitCheck> fromFirestore(
+    FirestoreService firestoreService,
+    AppDocumentId<PresubmitCheck> id,
+  ) async {
+    final document = await firestoreService.getDocument(
+      p.posix.join(kDatabase, 'documents', collectionId, id.documentId),
+    );
+    return PresubmitCheck.fromDocument(document);
+  }
+
+  factory PresubmitCheck({
     required int checkRunId,
     required String buildName,
     required TaskStatus status,
@@ -143,12 +153,7 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
     int? endTime,
     String? summary,
   }) {
-    final id = UnifiedCheckRunBuildId(
-      checkRunId: checkRunId,
-      buildName: buildName,
-      attemptNumber: attemptNumber,
-    );
-    return UnifiedCheckRunBuild._(
+    return PresubmitCheck._(
       {
         fieldCheckRunId: checkRunId.toValue(),
         fieldBuildName: buildName.toValue(),
@@ -160,25 +165,24 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
         if (endTime != null) fieldEndTime: endTime.toValue(),
         if (summary != null) fieldSummary: summary.toValue(),
       },
-      name: p.posix.join(
-        kDatabase,
-        'documents',
-        kUnifiedCheckRunBuildCollectionId,
-        id.documentId,
+      name: documentNameFor(
+        checkRunId: checkRunId,
+        buildName: buildName,
+        attemptNumber: attemptNumber,
       ),
     );
   }
 
-  factory UnifiedCheckRunBuild.fromDocument(Document document) {
-    return UnifiedCheckRunBuild._(document.fields!, name: document.name!);
+  factory PresubmitCheck.fromDocument(Document document) {
+    return PresubmitCheck._(document.fields!, name: document.name!);
   }
 
-  factory UnifiedCheckRunBuild.init({
+  factory PresubmitCheck.init({
     required String buildName,
     required int checkRunId,
     required int creationTime,
   }) {
-    return UnifiedCheckRunBuild(
+    return PresubmitCheck(
       buildName: buildName,
       attemptNumber: 1,
       checkRunId: checkRunId,
@@ -191,7 +195,7 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
     );
   }
 
-  UnifiedCheckRunBuild._(Map<String, Value> fields, {required String name}) {
+  PresubmitCheck._(Map<String, Value> fields, {required String name}) {
     this
       ..fields = fields
       ..name = name;
@@ -217,15 +221,19 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
     return TaskStatus.from(rawValue);
   }
 
-  void setStatus(TaskStatus status) {
+  set status(TaskStatus status) {
     fields[fieldStatus] = status.value.toValue();
   }
 
-  void setEndTime(int endTime) {
+  set startTime(int startTime) {
+    fields[fieldStartTime] = startTime.toValue();
+  }
+
+  set endTime(int endTime) {
     fields[fieldEndTime] = endTime.toValue();
   }
 
-  void setSummary(String summary) {
+  set summary(String summary) {
     fields[fieldSummary] = summary.toValue();
   }
 
@@ -256,65 +264,6 @@ final class UnifiedCheckRunBuild extends AppDocument<UnifiedCheckRunBuild> {
     if (status.isComplete) {
       return;
     }
-    setStatus(build.status.toTaskStatus());
-  }
-
-  /// Returns _all_ builds running against the speificed [checkRunId].
-  Future<List<UnifiedCheckRunBuild>> queryAllBuildsForCheckRun({
-    required FirestoreService firestoreService,
-    required int checkRunId,
-    TaskStatus? status,
-    String? buildName,
-    Transaction? transaction,
-  }) async {
-    return await _queryUnifiedCheckRunBuild(
-      firestoreService: firestoreService,
-      checkRunId: checkRunId,
-      buildName: buildName,
-      status: status,
-      transaction: transaction,
-    );
-  }
-
-  /// Returns _all_ build attempts forthe speificed [checkRunId] and [buildName].
-  Future<List<UnifiedCheckRunBuild>> queryAllBuildAttempts({
-    required FirestoreService firestoreService,
-    required int checkRunId,
-    required String? buildName,
-    Transaction? transaction,
-  }) async {
-    return await _queryUnifiedCheckRunBuild(
-      firestoreService: firestoreService,
-      checkRunId: checkRunId,
-      buildName: buildName,
-      status: null,
-      transaction: transaction,
-    );
-  }
-
-  Future<List<UnifiedCheckRunBuild>> _queryUnifiedCheckRunBuild({
-    required FirestoreService firestoreService,
-    required int checkRunId,
-    String? buildName,
-    TaskStatus? status,
-    Transaction? transaction,
-  }) async {
-    final filterMap = {
-      '${UnifiedCheckRunBuild.fieldCheckRunId} =': checkRunId,
-      if (buildName != null)
-        '${UnifiedCheckRunBuild.fieldBuildName} =': buildName,
-      if (status != null) '${UnifiedCheckRunBuild.fieldStatus} =': status.value,
-    };
-    // For tasks, therer is no reason to _not_ order this way.
-    final orderMap = {
-      UnifiedCheckRunBuild.fieldCreationTime: kQueryOrderDescending,
-    };
-    final documents = await firestoreService.query(
-      kUnifiedCheckRunBuildCollectionId,
-      filterMap,
-      orderMap: orderMap,
-      transaction: transaction,
-    );
-    return [...documents.map(UnifiedCheckRunBuild.fromDocument)];
+    status = build.status.toTaskStatus();
   }
 }

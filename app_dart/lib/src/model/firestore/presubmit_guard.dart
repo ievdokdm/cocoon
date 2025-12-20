@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-/// @docImport 'unified_check_run_build.dart';
+/// @docImport 'presubmit_guard.dart';
 library;
 
-import 'package:cocoon_server/logging.dart';
+import 'package:cocoon_common/task_status.dart';
 import 'package:github/github.dart';
 import 'package:googleapis/firestore/v1.dart' hide Status;
 import 'package:path/path.dart' as p;
@@ -14,8 +14,8 @@ import '../../../cocoon_service.dart';
 import '../../service/firestore.dart';
 import 'base.dart';
 
-final class UnifiedCheckRunId extends AppDocumentId<UnifiedCheckRun> {
-  UnifiedCheckRunId({
+final class PresubmitGuardId extends AppDocumentId<PresubmitGuard> {
+  PresubmitGuardId({
     required this.slug,
     required this.pullRequestId,
     required this.checkRunId,
@@ -39,24 +39,25 @@ final class UnifiedCheckRunId extends AppDocumentId<UnifiedCheckRun> {
       [slug.owner, slug.name, pullRequestId, checkRunId, stage].join('_');
 
   @override
-  AppDocumentMetadata<UnifiedCheckRun> get runtimeMetadata =>
-      UnifiedCheckRun.metadata;
+  AppDocumentMetadata<PresubmitGuard> get runtimeMetadata =>
+      PresubmitGuard.metadata;
 }
 
-final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
-  static const collectionId = 'unified_check_runs';
+final class PresubmitGuard extends AppDocument<PresubmitGuard> {
+  static const collectionId = 'presubmit_guards';
   static const fieldCommitSha = 'commit_sha';
   static const fieldAuthor = 'author';
   static const fieldCreationTime = 'creation_time';
   static const fieldRemainingBuilds = 'remaining_builds';
   static const fieldFailedBuilds = 'failed_builds';
+  static const fieldBuilds = 'builds';
 
-  static AppDocumentId<UnifiedCheckRun> documentIdFor({
+  static AppDocumentId<PresubmitGuard> documentIdFor({
     required RepositorySlug slug,
     required int pullRequestId,
     required int checkRunId,
     required CiStage stage,
-  }) => UnifiedCheckRunId(
+  }) => PresubmitGuardId(
     slug: slug,
     pullRequestId: pullRequestId,
     checkRunId: checkRunId,
@@ -90,14 +91,14 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
   //     '${slug.owner}_${slug.name}_${pullRequestId}_${checkRunId}_${stage.name}';
 
   @override
-  AppDocumentMetadata<UnifiedCheckRun> get runtimeMetadata => metadata;
+  AppDocumentMetadata<PresubmitGuard> get runtimeMetadata => metadata;
 
-  static final metadata = AppDocumentMetadata<UnifiedCheckRun>(
+  static final metadata = AppDocumentMetadata<PresubmitGuard>(
     collectionId: collectionId,
-    fromDocument: UnifiedCheckRun.fromDocument,
+    fromDocument: PresubmitGuard.fromDocument,
   );
 
-  factory UnifiedCheckRun.init({
+  factory PresubmitGuard.init({
     required RepositorySlug slug,
     required int pullRequestId,
     required int checkRunId,
@@ -107,7 +108,7 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     required String author,
     required int buildCount,
   }) {
-    return UnifiedCheckRun(
+    return PresubmitGuard(
       checkRunId: checkRunId,
       commitSha: commitSha,
       slug: slug,
@@ -120,11 +121,11 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     );
   }
 
-  factory UnifiedCheckRun.fromDocument(Document document) {
-    return UnifiedCheckRun._(document.fields!, name: document.name!);
+  factory PresubmitGuard.fromDocument(Document document) {
+    return PresubmitGuard._(document.fields!, name: document.name!);
   }
 
-  factory UnifiedCheckRun({
+  factory PresubmitGuard({
     required int checkRunId,
     required String commitSha,
     required RepositorySlug slug,
@@ -134,17 +135,18 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     required String author,
     int? remainingBuilds,
     int? failedBuilds,
+    Map<String, TaskStatus>? builds,
   }) {
-    final fields = <String, Value>{
-      fieldCommitSha: commitSha.toValue(),
-      fieldCreationTime: creationTime.toValue(),
-      fieldAuthor: author.toValue(),
-      if (remainingBuilds != null)
-        fieldRemainingBuilds: remainingBuilds.toValue(),
-      if (failedBuilds != null) fieldFailedBuilds: failedBuilds.toValue(),
-    };
-    return UnifiedCheckRun._(
-      fields,
+    return PresubmitGuard._(
+      {
+        fieldCommitSha: commitSha.toValue(),
+        fieldCreationTime: creationTime.toValue(),
+        fieldAuthor: author.toValue(),
+        if (remainingBuilds != null)
+          fieldRemainingBuilds: remainingBuilds.toValue(),
+        if (failedBuilds != null) fieldFailedBuilds: failedBuilds.toValue(),
+        if (builds != null) fieldBuilds: builds.toValue(),
+      },
       name: documentNameFor(
         slug: slug,
         pullRequestId: pullRequestId,
@@ -154,7 +156,7 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     );
   }
 
-  UnifiedCheckRun._(Map<String, Value> fields, {required String name}) {
+  PresubmitGuard._(Map<String, Value> fields, {required String name}) {
     this.fields = fields;
     this.name = name;
   }
@@ -168,6 +170,10 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
   int? get failedBuilds => fields[fieldFailedBuilds] != null
       ? int.parse(fields[fieldFailedBuilds]!.integerValue!)
       : null;
+  Map<String, TaskStatus>? get builds =>
+      fields[fieldBuilds]?.mapValue?.fields?.map<String, TaskStatus>(
+        (k, v) => MapEntry(k, TaskStatus.from(v.stringValue!)),
+      );
 
   /// The repository that this stage is recorded for.
   RepositorySlug get slug {
@@ -197,58 +203,15 @@ final class UnifiedCheckRun extends AppDocument<UnifiedCheckRun> {
     return CiStage.values.byName(stageName);
   }
 
-  /// Initializes a new document for the given [tasks] in Firestore so that stage-tracking can succeed.
-  ///
-  /// The list of tasks will be written as fields of a document with additional fields for tracking the creationTime
-  /// number of tasks, remaining count. It is required to include [commitSha] as a json encoded [CheckRun] as this
-  /// will be used to unlock any check runs blocking progress.
-  ///
-  /// Returns the created document or throws an error.
-  static Future<Document> initializeDocument({
-    required FirestoreService firestoreService,
+  set remainingBuilds(int remainingBuilds) {
+    fields[fieldRemainingBuilds] = remainingBuilds.toValue();
+  }
 
-    required RepositorySlug slug,
-    required int pullRequestId,
-    required int checkRunId,
-    required CiStage stage,
+  set failedBuilds(int failedBuilds) {
+    fields[fieldFailedBuilds] = failedBuilds.toValue();
+  }
 
-    required String commitSha,
-    required int creationTime,
-    required String author,
-    required int buildCount,
-  }) async {
-    final logCrumb =
-        'initializeDocument(${slug.owner}_${slug.name}_${pullRequestId}_${checkRunId}_$stage, $buildCount builds)';
-
-    final fields = <String, Value>{
-      fieldCommitSha: commitSha.toValue(),
-      fieldAuthor: author.toValue(),
-      fieldCreationTime: creationTime.toValue(),
-      fieldRemainingBuilds: buildCount.toValue(),
-      fieldFailedBuilds: 0.toValue(),
-    };
-
-    final document = Document(fields: fields);
-
-    try {
-      // Calling createDocument multiple times for the same documentId will return a 409 - ALREADY_EXISTS error;
-      // this is good because it means we don't have to do any transactions.
-      // curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" "https://firestore.googleapis.com/v1beta1/projects/flutter-dashboard/databases/cocoon/documents/unified_check_run?documentId=foo_bar_baz" -d '{"fields": {"test": {"stringValue": "baz"}}}'
-      final newDoc = await firestoreService.createDocument(
-        document,
-        collectionId: collectionId,
-        documentId: documentIdFor(
-          slug: slug,
-          pullRequestId: pullRequestId,
-          checkRunId: checkRunId,
-          stage: stage, //
-        ).documentId,
-      );
-      log.info('$logCrumb: document created');
-      return newDoc;
-    } catch (e) {
-      log.warn('$logCrumb: failed to create document', e);
-      rethrow;
-    }
+  set builds(Map<String, TaskStatus> builds) {
+    fields[fieldBuilds] = builds.toValue();
   }
 }

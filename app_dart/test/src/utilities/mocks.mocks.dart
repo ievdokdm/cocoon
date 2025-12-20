@@ -4075,7 +4075,7 @@ class MockLuciBuildService extends _i1.Mock implements _i17.LuciBuildService {
     required List<_i28.Target>? targets,
     required _i7.PullRequest? pullRequest,
     required _i29.EngineArtifacts? engineArtifacts,
-    required _i7.CheckRun? checkRunGuard,
+    _i7.CheckRun? checkRunGuard,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#scheduleTryBuilds, [], {

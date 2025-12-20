@@ -22,7 +22,6 @@ import '../model/ci_yaml/target.dart';
 import '../model/commit_ref.dart';
 import '../model/firestore/base.dart';
 import '../model/firestore/ci_staging.dart';
-import '../model/firestore/checks.dart';
 import '../model/firestore/commit.dart' as fs;
 import '../model/firestore/pr_check_runs.dart';
 import '../model/firestore/task.dart' as fs;
@@ -36,6 +35,7 @@ import 'config.dart';
 import 'content_aware_hash_service.dart';
 import 'exceptions.dart';
 import 'firestore.dart';
+import 'firestore/unified_check_run.dart';
 import 'get_files_changed.dart';
 import 'github_checks_service.dart';
 import 'luci_build_service.dart';
@@ -369,7 +369,7 @@ class Scheduler {
               'triggerPresubmitTargets($slug, $sha){frameworkOnly}';
           log.info('$logCrumb: FRAMEWORK_ONLY_TESTING_PR');
 
-          await Checks.initializeCiStagingDocument(
+          await UnifiedCheckRun.initializeCiStagingDocument(
             firestoreService: _firestore,
             slug: slug,
             sha: sha,
@@ -407,7 +407,7 @@ class Scheduler {
         // to complete before we can schedule more tests (i.e. build engine artifacts before testing against them).
         final EngineArtifacts engineArtifacts;
         if (isFusion) {
-          await Checks.initializeCiStagingDocument(
+          await UnifiedCheckRun.initializeCiStagingDocument(
             firestoreService: _firestore,
             slug: slug,
             sha: sha,
@@ -630,7 +630,7 @@ class Scheduler {
 
       // Create the staging doc that will track our engine progress and allow us to unlock
       // the merge group lock later.
-      await Checks.initializeCiStagingDocument(
+      await UnifiedCheckRun.initializeCiStagingDocument(
         firestoreService: _firestore,
         slug: slug,
         sha: headSha,
@@ -1228,7 +1228,7 @@ $s
           tasks = [...presubmitTargets.map((t) => t.name)];
         }
 
-        await Checks.initializeCiStagingDocument(
+        await UnifiedCheckRun.initializeCiStagingDocument(
           firestoreService: _firestore,
           slug: pullRequest.base!.repo!.slug(),
           sha: pullRequest.head!.sha!,
