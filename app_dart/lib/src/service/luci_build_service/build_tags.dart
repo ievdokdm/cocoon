@@ -75,6 +75,17 @@ final class BuildTags {
   List<bbv2.StringPair> toStringPairs() {
     return buildTags.map((e) => e.toStringPair()).toList();
   }
+
+  /// the current reschedule attempt.
+  ///
+  /// It returns 1 if this is the first run.
+  int get currentAttempt {
+    final attempt = getTagOfType<CurrentAttemptBuildTag>();
+    if (attempt == null) {
+      return 1;
+    }
+    return attempt.attemptNumber;
+  }
 }
 
 /// Valid tags for [bbv2.ScheduleBuildRequest.tags].

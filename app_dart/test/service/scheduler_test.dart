@@ -3532,6 +3532,7 @@ final class _CapturingFakeLuciBuildService extends Fake
     CheckSuiteEvent? checkSuiteEvent,
     EngineArtifacts? engineArtifacts,
     CheckRun? checkRunGuard,
+    int? attemptNumber,
   }) async {
     scheduledTryBuilds = targets;
     this.engineArtifacts = engineArtifacts;

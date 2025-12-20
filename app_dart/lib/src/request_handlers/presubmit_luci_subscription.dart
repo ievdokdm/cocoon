@@ -103,19 +103,18 @@ final class PresubmitLuciSubscription extends SubscriptionHandler {
     final userData = PresubmitUserData.fromBytes(pubSubCallBack.userData);
     var rescheduled = false;
     if (_githubChecksService.taskFailed(build.status)) {
-      final currentAttempt = _nextAttempt(tagSet);
       final maxAttempt = await _getMaxAttempt(
         userData.commit,
         builderName,
         tagSet,
       );
-      if (currentAttempt < maxAttempt) {
+      if (tagSet.currentAttempt < maxAttempt) {
         rescheduled = true;
         log.info('Rerunning failed task: $builderName');
         await _luciBuildService.reschedulePresubmitBuild(
           builderName: builderName,
           build: build,
-          nextAttempt: currentAttempt + 1,
+          nextAttempt: tagSet.currentAttempt + 1,
           userData: userData,
         );
       }
@@ -153,17 +152,6 @@ final class PresubmitLuciSubscription extends SubscriptionHandler {
     }
 
     return Response.emptyOk;
-  }
-
-  /// Returns the current reschedule attempt.
-  ///
-  /// It returns 1 if this is the first run.
-  static int _nextAttempt(BuildTags buildTags) {
-    final attempt = buildTags.getTagOfType<CurrentAttemptBuildTag>();
-    if (attempt == null) {
-      return 1;
-    }
-    return attempt.attemptNumber;
   }
 
   Future<int> _getMaxAttempt(
