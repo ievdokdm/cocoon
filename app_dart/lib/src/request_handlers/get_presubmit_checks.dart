@@ -80,7 +80,7 @@ final class GetPresubmitChecks extends ApiRequestHandler {
 
     final rpcChecks = [
       for (final check in checks)
-        PresubmitCheckResponse(
+        PresubmitJobResponse(
           attemptNumber: check.attemptNumber,
           buildName: check.buildName,
           creationTime: check.creationTime,

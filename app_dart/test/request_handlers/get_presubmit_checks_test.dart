@@ -35,7 +35,7 @@ void main() {
       );
     });
 
-    Future<List<PresubmitCheckResponse>?> getPresubmitCheckResponse(
+    Future<List<PresubmitJobResponse>?> getPresubmitCheckResponse(
       Response response,
     ) async {
       if (response.statusCode != HttpStatus.ok) {
@@ -49,7 +49,7 @@ void main() {
       }
       return [
         for (final item in jsonBody)
-          PresubmitCheckResponse.fromJson(item as Map<String, Object?>),
+          PresubmitJobResponse.fromJson(item as Map<String, Object?>),
       ];
     }
 
