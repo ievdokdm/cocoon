@@ -201,14 +201,14 @@ void main() {
       ),
     ).thenAnswer(
       (_) async => CocoonResponse.data([
-        PresubmitCheckResponse(
+        PresubmitJobResponse(
           attemptNumber: 1,
           buildName: 'Mac mac_host_engine 1',
           creationTime: 0,
           status: 'Succeeded',
           summary: 'All tests passed (452/452)',
         ),
-        PresubmitCheckResponse(
+        PresubmitJobResponse(
           attemptNumber: 2,
           buildName: 'Mac mac_host_engine 1',
           creationTime: 0,
@@ -384,7 +384,7 @@ void main() {
       ),
     ).thenAnswer(
       (_) async => CocoonResponse.data([
-        PresubmitCheckResponse(
+        PresubmitJobResponse(
           attemptNumber: 1,
           buildName: 'Mac mac_host_engine',
           creationTime: 0,

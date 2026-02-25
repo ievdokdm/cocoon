@@ -300,13 +300,13 @@ class DevelopmentCocoonService implements CocoonService {
   }
 
   @override
-  Future<CocoonResponse<List<PresubmitCheckResponse>>>
+  Future<CocoonResponse<List<PresubmitJobResponse>>>
   fetchPresubmitCheckDetails({
     required int checkRunId,
     required String buildName,
   }) async {
     return CocoonResponse.data([
-      PresubmitCheckResponse(
+      PresubmitJobResponse(
         attemptNumber: 1,
         buildName: buildName,
         creationTime: now.millisecondsSinceEpoch - 10000,
@@ -320,7 +320,7 @@ class DevelopmentCocoonService implements CocoonService {
 [SUCCESS] All tests passed (452/452)
 ''',
       ),
-      PresubmitCheckResponse(
+      PresubmitJobResponse(
         attemptNumber: 2,
         buildName: buildName,
         creationTime: now.millisecondsSinceEpoch,

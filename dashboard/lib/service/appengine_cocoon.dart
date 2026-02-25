@@ -326,7 +326,7 @@ class AppEngineCocoonService implements CocoonService {
   }
 
   @override
-  Future<CocoonResponse<List<PresubmitCheckResponse>>>
+  Future<CocoonResponse<List<PresubmitJobResponse>>>
   fetchPresubmitCheckDetails({
     required int checkRunId,
     required String buildName,
@@ -354,7 +354,7 @@ class AppEngineCocoonService implements CocoonService {
       return CocoonResponse.data(
         jsonResponse
             .cast<Map<String, Object?>>()
-            .map(PresubmitCheckResponse.fromJson)
+            .map(PresubmitJobResponse.fromJson)
             .toList(),
       );
     } catch (error) {

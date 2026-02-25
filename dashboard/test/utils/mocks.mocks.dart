@@ -611,7 +611,7 @@ class MockCocoonService extends _i1.Mock implements _i3.CocoonService {
           as _i8.Future<_i3.CocoonResponse<_i12.PresubmitGuardResponse>>);
 
   @override
-  _i8.Future<_i3.CocoonResponse<List<_i12.PresubmitCheckResponse>>>
+  _i8.Future<_i3.CocoonResponse<List<_i12.PresubmitJobResponse>>>
   fetchPresubmitCheckDetails({
     required int? checkRunId,
     required String? buildName,
@@ -623,9 +623,9 @@ class MockCocoonService extends _i1.Mock implements _i3.CocoonService {
             }),
             returnValue:
                 _i8.Future<
-                  _i3.CocoonResponse<List<_i12.PresubmitCheckResponse>>
+                  _i3.CocoonResponse<List<_i12.PresubmitJobResponse>>
                 >.value(
-                  _FakeCocoonResponse_2<List<_i12.PresubmitCheckResponse>>(
+                  _FakeCocoonResponse_2<List<_i12.PresubmitJobResponse>>(
                     this,
                     Invocation.method(#fetchPresubmitCheckDetails, [], {
                       #checkRunId: checkRunId,
@@ -634,7 +634,7 @@ class MockCocoonService extends _i1.Mock implements _i3.CocoonService {
                   ),
                 ),
           )
-          as _i8.Future<_i3.CocoonResponse<List<_i12.PresubmitCheckResponse>>>);
+          as _i8.Future<_i3.CocoonResponse<List<_i12.PresubmitJobResponse>>>);
 
   @override
   _i8.Future<_i3.CocoonResponse<List<_i12.PresubmitGuardSummary>>>

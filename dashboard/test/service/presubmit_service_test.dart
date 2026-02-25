@@ -61,7 +61,7 @@ void main() {
   group('AppEngine CocoonService fetchPresubmitCheckDetails', () {
     late AppEngineCocoonService service;
 
-    test('should return expected List<PresubmitCheckResponse>', () async {
+    test('should return expected List<PresubmitJobResponse>', () async {
       final checkData = [
         {
           'attempt_number': 1,

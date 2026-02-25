@@ -124,8 +124,8 @@ abstract class CocoonService {
     required String sha,
   });
 
-  /// Gets the details for a specific presubmit check.
-  Future<CocoonResponse<List<PresubmitCheckResponse>>>
+  /// Gets the details for a specific presubmit job.
+  Future<CocoonResponse<List<PresubmitJobResponse>>>
   fetchPresubmitCheckDetails({
     required int checkRunId,
     required String buildName,

@@ -57,8 +57,8 @@ class PresubmitState extends ChangeNotifier {
   String? _selectedCheck;
 
   /// The checks/logs for the current [selectedCheck].
-  List<PresubmitCheckResponse>? get checks => _checks;
-  List<PresubmitCheckResponse>? _checks;
+  List<PresubmitJobResponse>? get checks => _checks;
+  List<PresubmitJobResponse>? _checks;
 
   /// Track if we have already attempted to fetch summaries for the current [pr].
   String? _lastFetchedPr;
