@@ -195,7 +195,7 @@ void main() {
     ).thenAnswer((_) async => const CocoonResponse.data(guardResponse));
 
     when(
-      mockCocoonService.fetchPresubmitCheckDetails(
+      mockCocoonService.fetchPresubmitJobDetails(
         checkRunId: anyNamed('checkRunId'),
         buildName: argThat(contains('mac_host_engine'), named: 'buildName'),
       ),
@@ -378,7 +378,7 @@ void main() {
     ).thenAnswer((_) async => const CocoonResponse.data(guardResponse));
 
     when(
-      mockCocoonService.fetchPresubmitCheckDetails(
+      mockCocoonService.fetchPresubmitJobDetails(
         checkRunId: 456,
         buildName: 'Mac mac_host_engine',
       ),

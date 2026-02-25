@@ -326,8 +326,7 @@ class AppEngineCocoonService implements CocoonService {
   }
 
   @override
-  Future<CocoonResponse<List<PresubmitJobResponse>>>
-  fetchPresubmitCheckDetails({
+  Future<CocoonResponse<List<PresubmitJobResponse>>> fetchPresubmitJobDetails({
     required int checkRunId,
     required String buildName,
   }) async {
@@ -335,16 +334,16 @@ class AppEngineCocoonService implements CocoonService {
       'check_run_id': checkRunId.toString(),
       'build_name': buildName,
     };
-    final getChecksUrl = apiEndpoint(
-      '/api/get-presubmit-checks',
+    final getJobsUrl = apiEndpoint(
+      '/api/get-presubmit-jobs',
       queryParameters: queryParameters,
     );
 
-    final response = await _client.get(getChecksUrl);
+    final response = await _client.get(getJobsUrl);
 
     if (response.statusCode != HttpStatus.ok) {
       return CocoonResponse.error(
-        '/api/get-presubmit-checks returned ${response.statusCode}',
+        '/api/get-presubmit-jobs returned ${response.statusCode}',
         statusCode: response.statusCode,
       );
     }

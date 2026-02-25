@@ -300,8 +300,7 @@ class DevelopmentCocoonService implements CocoonService {
   }
 
   @override
-  Future<CocoonResponse<List<PresubmitJobResponse>>>
-  fetchPresubmitCheckDetails({
+  Future<CocoonResponse<List<PresubmitJobResponse>>> fetchPresubmitJobDetails({
     required int checkRunId,
     required String buildName,
   }) async {
