@@ -20,21 +20,21 @@ This phase focuses on introducing the `PublicApiRequestHandler` and refactoring 
 ## Phase 2: Expose Target APIs Publicly
 This phase transitions the specified handlers to `PublicApiRequestHandler`.
 
-- [ ] Task: Refactor `GetPresubmitChecks`
-    - [ ] Update `app_dart/lib/src/request_handlers/get_presubmit_checks.dart` to extend `PublicApiRequestHandler`.
-    - [ ] Remove `authenticationProvider` from the constructor and `super` call.
-    - [ ] Update tests in `app_dart/test/request_handlers/get_presubmit_checks_test.dart` to reflect constructor changes.
-- [ ] Task: Refactor `GetPresubmitGuardSummaries`
-    - [ ] Update `app_dart/lib/src/request_handlers/get_presubmit_guard_summaries.dart` to extend `PublicApiRequestHandler`.
-    - [ ] Remove `authenticationProvider` from the constructor and `super` call.
-    - [ ] Update tests in `app_dart/test/request_handlers/get_presubmit_guard_summaries_test.dart` to reflect constructor changes.
-- [ ] Task: Refactor `GetPresubmitGuard`
-    - [ ] Update `app_dart/lib/src/request_handlers/get_presubmit_guard.dart` to extend `PublicApiRequestHandler`.
-    - [ ] Remove `authenticationProvider` from the constructor and `super` call.
-    - [ ] Update tests in `app_dart/test/request_handlers/get_presubmit_guard_test.dart` to reflect constructor changes.
-- [ ] Task: Verify Public Access
-    - [ ] Add/Update tests for each handler to verify they return successful responses even when no authentication is provided.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Expose Target APIs Publicly' (Protocol in workflow.md)
+- [x] Task: Refactor `GetPresubmitChecks`
+    - [x] Update `app_dart/lib/src/request_handlers/get_presubmit_checks.dart` to extend `PublicApiRequestHandler`.
+    - [x] Remove `authenticationProvider` from the constructor and `super` call.
+    - [x] Update tests in `app_dart/test/request_handlers/get_presubmit_checks_test.dart` to reflect constructor changes.
+- [x] Task: Refactor `GetPresubmitGuardSummaries`
+    - [x] Update `app_dart/lib/src/request_handlers/get_presubmit_guard_summaries.dart` to extend `PublicApiRequestHandler`.
+    - [x] Remove `authenticationProvider` from the constructor and `super` call.
+    - [x] Update tests in `app_dart/test/request_handlers/get_presubmit_guard_summaries_test.dart` to reflect constructor changes.
+- [x] Task: Refactor `GetPresubmitGuard`
+    - [x] Update `app_dart/lib/src/request_handlers/get_presubmit_guard.dart` to extend `PublicApiRequestHandler`.
+    - [x] Remove `authenticationProvider` from the constructor and `super` call.
+    - [x] Update tests in `app_dart/test/request_handlers/get_presubmit_guard_test.dart` to reflect constructor changes.
+- [x] Task: Verify Public Access
+    - [x] Add/Update tests for each handler to verify they return successful responses even when no authentication is provided.
+- [~] Task: Conductor - User Manual Verification 'Phase 2: Expose Target APIs Publicly' (Protocol in workflow.md)
 
 ## Phase 3: Quality Assurance & Cleanup
 Final checks for code quality and standards.
