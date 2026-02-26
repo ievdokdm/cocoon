@@ -34,6 +34,8 @@ This phase transitions the specified handlers to `PublicApiRequestHandler`.
     - [x] Update tests in `app_dart/test/request_handlers/get_presubmit_guard_test.dart` to reflect constructor changes.
 - [x] Task: Verify Public Access
     - [x] Add/Update tests for each handler to verify they return successful responses even when no authentication is provided.
+- [x] Task: Update API Paths
+    - [x] Change `/api/get-presubmit-*` to `/api/public/get-presubmit-*` in `app_dart/lib/server.dart`.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Expose Target APIs Publicly' (Protocol in workflow.md)
 
 
