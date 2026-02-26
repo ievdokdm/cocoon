@@ -22,6 +22,6 @@
 
 ---
 
-- [ ] **Track: Public Presubmit APIs**
+- [x] **Track: Public Presubmit APIs**
 *Link: [./tracks/public_presubmit_apis_20260226/](./tracks/public_presubmit_apis_20260226/)*
 
