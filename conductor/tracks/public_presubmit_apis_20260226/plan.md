@@ -17,7 +17,7 @@ This phase focuses on introducing the `PublicApiRequestHandler` and refactoring 
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Refactor Request Handler Hierarchy' (Protocol in workflow.md)
 
 
-## Phase 2: Expose Target APIs Publicly
+## Phase 2: Expose Target APIs Publicly [checkpoint: 4c366bf]
 This phase transitions the specified handlers to `PublicApiRequestHandler`.
 
 - [x] Task: Refactor `GetPresubmitChecks`
@@ -34,7 +34,8 @@ This phase transitions the specified handlers to `PublicApiRequestHandler`.
     - [x] Update tests in `app_dart/test/request_handlers/get_presubmit_guard_test.dart` to reflect constructor changes.
 - [x] Task: Verify Public Access
     - [x] Add/Update tests for each handler to verify they return successful responses even when no authentication is provided.
-- [~] Task: Conductor - User Manual Verification 'Phase 2: Expose Target APIs Publicly' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Expose Target APIs Publicly' (Protocol in workflow.md)
+
 
 ## Phase 3: Quality Assurance & Cleanup
 Final checks for code quality and standards.
