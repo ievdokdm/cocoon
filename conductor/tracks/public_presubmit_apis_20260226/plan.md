@@ -40,6 +40,9 @@ This phase transitions the specified handlers to `PublicApiRequestHandler`.
     - [x] Identify all handlers with `/api/public/` path.
     - [x] Update `GetBuildStatus`, `GetSuppressedTests`, `GetRepos`, `GetEngineArtifactsReady`, `GetReleaseBranches`, `GetStatus`, `GetGreenCommits`, and `GithubRateLimitStatus` to extend `PublicApiRequestHandler`.
     - [x] Verify all request handler tests pass.
+- [x] Task: Update Dashboard API Paths
+    - [x] Update `dashboard/lib/service/appengine_cocoon.dart` to use `/api/public/` for presubmit endpoints.
+    - [x] Update `dashboard/test/service/presubmit_service_test.dart` to verify new paths.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Expose Target APIs Publicly' (Protocol in workflow.md)
 
 
