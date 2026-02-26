@@ -5,17 +5,16 @@ This plan outlines the steps to refactor the request handler hierarchy and expos
 ## Phase 1: Refactor Request Handler Hierarchy
 This phase focuses on introducing the `PublicApiRequestHandler` and refactoring `ApiRequestHandler` to inherit from it.
 
-- [ ] Task: Create `PublicApiRequestHandler`
-    - [ ] Create `app_dart/lib/src/request_handling/public_api_request_handler.dart`.
-    - [ ] Define `PublicApiRequestHandler` as an abstract base class extending `RequestHandler`.
-    - [ ] Move `checkRequiredParameters` and `checkRequiredQueryParameters` from `ApiRequestHandler` to `PublicApiRequestHandler`.
-- [ ] Task: Refactor `ApiRequestHandler`
-    - [ ] Update `app_dart/lib/src/request_handling/api_request_handler.dart` to extend `PublicApiRequestHandler`.
-    - [ ] Remove the moved methods from `ApiRequestHandler`.
-- [ ] Task: Verify Base Class Refactoring
+- [x] Task: Create `PublicApiRequestHandler`
+    - [x] Create `app_dart/lib/src/request_handling/public_api_request_handler.dart`.
+    - [x] Move `checkRequiredParameters` and `checkRequiredQueryParameters` from `ApiRequestHandler` to `PublicApiRequestHandler`.
+- [x] Task: Refactor `ApiRequestHandler`
+    - [x] Update `app_dart/lib/src/request_handling/api_request_handler.dart` to extend `PublicApiRequestHandler`.
+    - [x] Remove the moved methods from `ApiRequestHandler`.
+- [x] Task: Verify Base Class Refactoring
     - [ ] Run existing tests for `ApiRequestHandler` and `RequestHandler` to ensure no regressions.
     - [ ] Command: `dart test app_dart/test/request_handling/api_request_handler_test.dart`
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Refactor Request Handler Hierarchy' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Phase 1: Refactor Request Handler Hierarchy' (Protocol in workflow.md)
 
 ## Phase 2: Expose Target APIs Publicly
 This phase transitions the specified handlers to `PublicApiRequestHandler`.
