@@ -2,7 +2,7 @@
 
 This plan outlines the steps to refactor the request handler hierarchy and expose specific presubmit APIs publicly.
 
-## Phase 1: Refactor Request Handler Hierarchy
+## Phase 1: Refactor Request Handler Hierarchy [checkpoint: 2a49e7e]
 This phase focuses on introducing the `PublicApiRequestHandler` and refactoring `ApiRequestHandler` to inherit from it.
 
 - [x] Task: Create `PublicApiRequestHandler`
@@ -12,9 +12,10 @@ This phase focuses on introducing the `PublicApiRequestHandler` and refactoring 
     - [x] Update `app_dart/lib/src/request_handling/api_request_handler.dart` to extend `PublicApiRequestHandler`.
     - [x] Remove the moved methods from `ApiRequestHandler`.
 - [x] Task: Verify Base Class Refactoring
-    - [ ] Run existing tests for `ApiRequestHandler` and `RequestHandler` to ensure no regressions.
-    - [ ] Command: `dart test app_dart/test/request_handling/api_request_handler_test.dart`
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Refactor Request Handler Hierarchy' (Protocol in workflow.md)
+    - [x] Run existing tests for `ApiRequestHandler` and `RequestHandler` to ensure no regressions.
+    - [x] Command: `dart test app_dart/test/request_handling/api_request_handler_test.dart`
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Refactor Request Handler Hierarchy' (Protocol in workflow.md)
+
 
 ## Phase 2: Expose Target APIs Publicly
 This phase transitions the specified handlers to `PublicApiRequestHandler`.
