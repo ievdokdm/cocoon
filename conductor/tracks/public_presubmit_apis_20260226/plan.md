@@ -40,10 +40,10 @@ This phase transitions the specified handlers to `PublicApiRequestHandler`.
 ## Phase 3: Quality Assurance & Cleanup
 Final checks for code quality and standards.
 
-- [ ] Task: Run Code Quality Checks
-    - [ ] Execute `dart format --set-exit-if-changed .` in `app_dart`.
-    - [ ] Execute `dart analyze --fatal-infos .` in `app_dart`.
-- [ ] Task: Final Test Suite Execution
-    - [ ] Run all tests in `app_dart` to ensure overall system stability.
-    - [ ] Command: `dart test app_dart/test`
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Quality Assurance & Cleanup' (Protocol in workflow.md)
+- [x] Task: Run Code Quality Checks
+    - [x] Execute `dart format --set-exit-if-changed .` in `app_dart`.
+    - [x] Execute `dart analyze --fatal-infos .` in `app_dart`.
+- [x] Task: Final Test Suite Execution
+    - [x] Run all tests in `app_dart` to ensure overall system stability.
+    - [x] Command: `dart test app_dart/test`
+- [~] Task: Conductor - User Manual Verification 'Phase 3: Quality Assurance & Cleanup' (Protocol in workflow.md)

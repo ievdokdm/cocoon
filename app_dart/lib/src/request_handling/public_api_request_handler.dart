@@ -10,9 +10,7 @@ import 'request_handler.dart';
 /// A [RequestHandler] for public APIs that do not require authentication.
 abstract base class PublicApiRequestHandler extends RequestHandler {
   /// Creates a new [PublicApiRequestHandler].
-  const PublicApiRequestHandler({
-    required super.config,
-  });
+  const PublicApiRequestHandler({required super.config});
 
   /// Throws a [BadRequestException] if any of [requiredParameters] is missing
   /// from [requestData].

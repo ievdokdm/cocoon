@@ -28,10 +28,7 @@ void main() {
       config = FakeConfig();
       tester = RequestHandlerTester();
       firestoreService = FakeFirestoreService();
-      handler = GetPresubmitChecks(
-        config: config,
-        firestore: firestoreService,
-      );
+      handler = GetPresubmitChecks(config: config, firestore: firestoreService);
     });
 
     Future<List<PresubmitCheckResponse>?> getPresubmitCheckResponse(

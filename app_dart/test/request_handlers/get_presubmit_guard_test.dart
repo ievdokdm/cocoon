@@ -45,10 +45,7 @@ void main() {
   setUp(() {
     firestore = FakeFirestoreService();
     tester = RequestHandlerTester();
-    handler = GetPresubmitGuard(
-      config: FakeConfig(),
-      firestore: firestore,
-    );
+    handler = GetPresubmitGuard(config: FakeConfig(), firestore: firestore);
   });
 
   test('missing parameters', () async {
