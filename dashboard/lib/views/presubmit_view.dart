@@ -42,7 +42,8 @@ final class PreSubmitView extends StatefulWidget {
   State<PreSubmitView> createState() => _PreSubmitViewState();
 }
 
-class _PreSubmitViewState extends State<PreSubmitView> with WidgetsBindingObserver {
+class _PreSubmitViewState extends State<PreSubmitView>
+    with WidgetsBindingObserver {
   PresubmitState? _presubmitState;
 
   @override
