@@ -3688,6 +3688,133 @@ targets:
         );
       });
 
+      test('schedule some work on prod for unified check runs', () async {
+        final sha = 'c9affbbb12aa40cb3afbe94b9ea6b119a256bebf';
+        firestore.putDocument(
+          PresubmitGuard(
+            dashboardChecks: generateCheckRun(1234),
+            headSha: sha,
+            slug: Config.flutterSlug,
+            prNum: 15,
+            stage: CiStage.genericTests,
+            author: 'dash',
+            creationTime: DateTime.now().millisecondsSinceEpoch,
+            jobs: {},
+            remainingJobs: 0,
+            failedJobs: 0,
+          ),
+        );
+
+        ciYamlFetcher.setCiYamlFrom(singleCiYaml, engine: fusionDualCiYaml);
+        final luci = MockLuciBuildService();
+        when(
+          luci.getAvailableBuilderSet(
+            project: anyNamed('project'),
+            bucket: anyNamed('bucket'),
+          ),
+        ).thenAnswer((inv) async {
+          return {'Mac engine_build', 'Linux engine_build'};
+        });
+        when(
+          luci.scheduleMergeGroupBuilds(
+            targets: anyNamed('targets'),
+            commit: anyNamed('commit'),
+            guardCheckRunId: anyNamed('guardCheckRunId'),
+            pullRequestNumber: anyNamed('pullRequestNumber'),
+            stage: anyNamed('stage'),
+          ),
+        ).thenAnswer((inv) async {});
+        final mockGithubService = MockGithubService();
+        final checkRuns = <CheckRun>[];
+        when(
+          mockGithubChecksUtil.createCheckRun(
+            any,
+            any,
+            any,
+            captureAny,
+            output: anyNamed('output'),
+          ),
+        ).thenAnswer((inv) async {
+          final slug = inv.positionalArguments[1] as RepositorySlug;
+          final name = inv.positionalArguments[3] as String?;
+          checkRuns.add(
+            createGithubCheckRun(
+              id: checkRuns.length + 1,
+              owner: slug.owner,
+              repo: slug.name,
+              sha: sha,
+              name: name,
+            ),
+          );
+          return checkRuns.last;
+        });
+
+        scheduler = Scheduler(
+          githubService: config.githubService ?? FakeGithubService(),
+          cache: cache,
+          config: FakeConfig(
+            githubService: mockGithubService,
+            githubClient: MockGitHub(),
+            dynamicConfig: DynamicConfig.fromJson({
+              'contentAwareHashing': {'waitOnContentHash': false},
+            }),
+          ),
+          githubChecksService: GithubChecksService(
+            config,
+            githubChecksUtil: mockGithubChecksUtil,
+          ),
+          getFilesChanged: getFilesChanged,
+          ciYamlFetcher: ciYamlFetcher,
+          luciBuildService: luci,
+          contentAwareHash: fakeContentAwareHash,
+          firestore: firestore,
+          bigQuery: bigQuery,
+        );
+
+        final mergeGroupEvent = cocoon_checks.MergeGroupEvent.fromJson(
+          json.decode(
+                generateMergeGroupEventString(
+                  repository: 'flutter/flutter',
+                  action: 'checks_requested',
+                  message: 'Implement an amazing feature',
+                ),
+              )
+              as Map<String, Object?>,
+        );
+
+        await scheduler.handleMergeGroupEvent(mergeGroupEvent: mergeGroupEvent);
+
+        final guards = await firestore.query(PresubmitGuard.collectionId, {});
+        expect(guards, hasLength(2));
+        final mqGuardDoc = guards.firstWhere((g) => PresubmitGuard.fromDocument(g).stage == CiStage.fusionEngineBuild);
+        final mqGuard = PresubmitGuard.fromDocument(mqGuardDoc);
+        expect(mqGuard.remainingJobs, 2);
+        expect(mqGuard.dashboardChecks.name, Config.kDashboardCheckName);
+        expect(mqGuard.mergeQueueGuard!.name, Config.kMergeQueueLockName);
+
+        verifyNever(
+          mockGithubChecksUtil.updateCheckRun(
+            any,
+            Config.flutterSlug,
+            any,
+            status: anyNamed('status'),
+            conclusion: anyNamed('conclusion'),
+            output: anyNamed('output'),
+          ),
+        );
+
+        final result = verify(
+          luci.scheduleMergeGroupBuilds(
+            targets: captureAnyNamed('targets'),
+            commit: anyNamed('commit'),
+            guardCheckRunId: 2,
+            pullRequestNumber: 15,
+            stage: CiStage.fusionEngineBuild,
+          ),
+        );
+        expect(result.callCount, 1);
+      });
+
       test('does not schedule work if waitOnContentHash', () async {
         ciYamlFetcher.setCiYamlFrom(singleCiYaml, engine: fusionDualCiYaml);
         final luci = MockLuciBuildService();
@@ -4356,15 +4483,20 @@ targets:
         'requires action on Dashboard Checks when a test check run fails (merge group)',
         () async {
           final pullRequest = generatePullRequest();
-          final checkRunGuard = generateCheckRun(
+          final dashboardChecks = generateCheckRun(
             1234,
             name: Config.kDashboardCheckName,
+            startedAt: DateTime.now(),
+          );
+          final mergeQueueGuard = generateCheckRun(
+            5678,
+            name: Config.kMergeQueueLockName,
             startedAt: DateTime.now(),
           );
 
           await PrCheckRuns.initializeDocument(
             firestoreService: firestore,
-            checks: [checkRunGuard],
+            checks: [dashboardChecks, mergeQueueGuard],
             pullRequest: pullRequest,
           );
 
@@ -4374,7 +4506,8 @@ targets:
           // Initialize presubmit guard for tests stage
           firestore.putDocument(
             PresubmitGuard(
-              dashboardChecks: checkRunGuard,
+              dashboardChecks: dashboardChecks,
+              mergeQueueGuard: mergeQueueGuard,
               headSha: pullRequest.head!.sha!,
               slug: pullRequest.base!.repo!.slug(),
               prNum: pullRequest.number!,
@@ -4392,7 +4525,7 @@ targets:
             PresubmitJob.init(
               slug: pullRequest.base!.repo!.slug(),
               jobName: 'Linux test',
-              checkRunId: checkRunGuard.id!,
+              checkRunId: dashboardChecks.id!,
               creationTime: DateTime.now().millisecondsSinceEpoch,
             ),
           );
@@ -4403,7 +4536,7 @@ targets:
               sha: pullRequest.head!.sha!,
               branch: 'gh-readonly-queue/master/pr-123-abc',
             ),
-            guardCheckRunId: checkRunGuard.id,
+            guardCheckRunId: dashboardChecks.id,
             stage: CiStage.fusionTests,
             checkSuiteId: 2,
             pullRequestNumber: pullRequest.number,
@@ -4424,8 +4557,31 @@ targets:
             mockGithubChecksUtil.updateCheckRun(
               any,
               any,
+              argThat(
+                isA<CheckRun>().having(
+                  (c) => c.name,
+                  'name',
+                  Config.kMergeQueueLockName,
+                ),
+              ),
+              status: CheckRunStatus.completed,
+              conclusion: CheckRunConclusion.failure, // Merge Queue failure
+              output: anyNamed('output'),
+            ),
+          ).called(1);
+
+          verify(
+            mockGithubChecksUtil.updateCheckRun(
               any,
-              status: anyNamed('status'),
+              any,
+              argThat(
+                isA<CheckRun>().having(
+                  (c) => c.name,
+                  'name',
+                  Config.kDashboardCheckName,
+                ),
+              ),
+              status: CheckRunStatus.completed,
               conclusion: CheckRunConclusion.actionRequired, // Dashboard Checks failure
               detailsUrl: anyNamed('detailsUrl'),
               output: anyNamed('output'),
@@ -4520,27 +4676,30 @@ targets:
         },
       );
 
-      test('closes merge queue guard in merge group success', () async {
+      test('closes merge queue guard and dashboard checks in merge group success for unified check runs', () async {
         final pullRequest = generatePullRequest();
-        final checkRunGuard = generateCheckRun(
+        final dashboardChecks = generateCheckRun(
           1234,
+          name: Config.kDashboardCheckName,
+          startedAt: DateTime.now(),
+        );
+        final mergeQueueGuard = generateCheckRun(
+          5678,
           name: Config.kMergeQueueLockName,
           startedAt: DateTime.now(),
         );
 
         await PrCheckRuns.initializeDocument(
           firestoreService: firestore,
-          checks: [checkRunGuard],
+          checks: [dashboardChecks, mergeQueueGuard],
           pullRequest: pullRequest,
         );
-
-        // Make it look like a merge group
-        // checkRunGuard.checkSuite!.headBranch = 'gh-readonly-queue/master/pr-123-abc';
 
         // Initialize presubmit guard for tests stage
         firestore.putDocument(
           PresubmitGuard(
-            dashboardChecks: checkRunGuard,
+            dashboardChecks: dashboardChecks,
+            mergeQueueGuard: mergeQueueGuard,
             headSha: pullRequest.head!.sha!,
             slug: pullRequest.base!.repo!.slug(),
             prNum: pullRequest.number!,
@@ -4558,7 +4717,7 @@ targets:
           PresubmitJob.init(
             slug: pullRequest.base!.repo!.slug(),
             jobName: 'Linux test',
-            checkRunId: checkRunGuard.id!,
+            checkRunId: dashboardChecks.id!,
             creationTime: DateTime.now().millisecondsSinceEpoch,
           ),
         );
@@ -4569,7 +4728,7 @@ targets:
             sha: pullRequest.head!.sha!,
             branch: 'gh-readonly-queue/master/pr-123-abc',
           ),
-          guardCheckRunId: checkRunGuard.id,
+          guardCheckRunId: dashboardChecks.id,
           stage: CiStage.fusionTests,
           checkSuiteId: 2,
           pullRequestNumber: pullRequest.number,
@@ -4596,9 +4755,32 @@ targets:
           mockGithubChecksUtil.updateCheckRun(
             any,
             any,
-            any,
-            status: anyNamed('status'),
+            argThat(
+              isA<CheckRun>().having(
+                (c) => c.name,
+                'name',
+                Config.kMergeQueueLockName,
+              ),
+            ),
+            status: CheckRunStatus.completed,
             conclusion: CheckRunConclusion.success, // Merge queue success
+            output: anyNamed('output'),
+          ),
+        ).called(1);
+
+        verify(
+          mockGithubChecksUtil.updateCheckRun(
+            any,
+            any,
+            argThat(
+              isA<CheckRun>().having(
+                (c) => c.name,
+                'name',
+                Config.kDashboardCheckName,
+              ),
+            ),
+            status: CheckRunStatus.completed,
+            conclusion: CheckRunConclusion.success, // Dashboard Checks success
             output: anyNamed('output'),
           ),
         ).called(1);
@@ -4609,7 +4791,7 @@ targets:
       });
 
       test(
-        'closes merge queue guard in merge group success for non-fusion repos',
+        'closes Dashboard Checks on PR success for non-fusion repos (unified flow)',
         () async {
           final pullRequest = generatePullRequest(repo: 'packages');
           final checkRunGuard = generateCheckRun(
@@ -4683,9 +4865,15 @@ targets:
             mockGithubChecksUtil.updateCheckRun(
               any,
               any,
-              any,
-              status: anyNamed('status'),
-              conclusion: CheckRunConclusion.success, // Merge queue success
+              argThat(
+                isA<CheckRun>().having(
+                  (c) => c.name,
+                  'name',
+                  Config.kDashboardCheckName,
+                ),
+              ),
+              status: CheckRunStatus.completed,
+              conclusion: CheckRunConclusion.success,
               output: anyNamed('output'),
             ),
           ).called(1);

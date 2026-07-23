@@ -49,6 +49,7 @@ final class PresubmitGuardId extends AppDocumentId<PresubmitGuard> {
 final class PresubmitGuard extends AppDocument<PresubmitGuard> {
   static const collectionId = 'presubmit_guards';
   static const fieldDashboardChecks = 'dashboard_checks';
+  static const fieldMergeQueueGuard = 'merge_queue_guard';
   static const fieldCheckRunId = 'check_run_id';
   static const fieldPrNum = 'pr_num';
   static const fieldSlug = 'slug';
@@ -112,6 +113,7 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
     required RepositorySlug slug,
     required int prNum,
     required CheckRun dashboardChecks,
+    CheckRun? mergeQueueGuard,
     required CiStage stage,
     required String headSha,
     required int creationTime,
@@ -120,6 +122,7 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
   }) {
     return PresubmitGuard(
       dashboardChecks: dashboardChecks,
+      mergeQueueGuard: mergeQueueGuard,
       headSha: headSha,
       slug: slug,
       prNum: prNum,
@@ -137,6 +140,7 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
 
   factory PresubmitGuard({
     required CheckRun dashboardChecks,
+    CheckRun? mergeQueueGuard,
     required String headSha,
     required RepositorySlug slug,
     required int prNum,
@@ -157,6 +161,9 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
         fieldCreationTime: creationTime.toValue(),
         fieldAuthor: author.toValue(),
         fieldDashboardChecks: json.encode(dashboardChecks.toJson()).toValue(),
+        if (mergeQueueGuard != null)
+          fieldMergeQueueGuard:
+              json.encode(mergeQueueGuard.toJson()).toValue(),
         fieldRemainingJobs: remainingJobs.toValue(),
         fieldFailedJobs: failedJobs.toValue(),
         if (jobs != null)
@@ -201,6 +208,21 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
   }
 
   String get dashboardChecksJson => fields[fieldDashboardChecks]!.stringValue!;
+
+  CheckRun? get mergeQueueGuard {
+    if (fields[fieldMergeQueueGuard]?.stringValue == null) {
+      return null;
+    }
+    final jsonData =
+        jsonDecode(fields[fieldMergeQueueGuard]!.stringValue!)
+            as Map<String, Object?>;
+    if (jsonData['conclusion'] == 'null') {
+      jsonData.remove('conclusion');
+    }
+    return CheckRun.fromJson(jsonData);
+  }
+
+  String? get mergeQueueGuardJson => fields[fieldMergeQueueGuard]?.stringValue;
 
   /// The repository that this stage is recorded for.
   RepositorySlug get slug {

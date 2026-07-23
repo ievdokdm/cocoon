@@ -33,16 +33,23 @@ final class UnifiedCheckRun {
     PullRequest? pullRequest,
     CheckRun? dashboardChecks,
     CheckRun? mergeQueueGuard,
+    bool isUnifiedCheckRun = false,
+    int? prNum,
+    String? author,
     @visibleForTesting DateTime Function() utcNow = DateTime.timestamp,
   }) async {
-    if (dashboardChecks != null &&
-        pullRequest != null &&
-        config.flags.isUnifiedCheckRunFlowEnabledForUser(
-          pullRequest.user!.login!,
-        )) {
+    final isUnified = dashboardChecks != null &&
+        (isUnifiedCheckRun ||
+            (pullRequest != null &&
+                config.flags.isUnifiedCheckRunFlowEnabledForUser(
+                  pullRequest.user!.login!,
+                )));
+    if (isUnified) {
+      final prNumber = pullRequest?.number ?? prNum!;
+      final prAuthor = pullRequest?.user?.login ?? author!;
       // Create the presubmit_guard and associated presubmit_job documents.
       log.info(
-        'Storing UnifiedCheckRun data for ${slug.fullName}#${pullRequest.number} as it enabled for user ${pullRequest.user!.login}.',
+        'Storing UnifiedCheckRun data for ${slug.fullName}#$prNumber as it enabled for user $prAuthor.',
       );
       // We store the creation time of the guard since there might be several
       // guards for the same PR created and each new one created after previous
@@ -50,12 +57,13 @@ final class UnifiedCheckRun {
       final creationTime = utcNow().millisecondsSinceEpoch;
       final guard = PresubmitGuard(
         dashboardChecks: dashboardChecks,
+        mergeQueueGuard: mergeQueueGuard,
         headSha: sha,
         slug: slug,
-        prNum: pullRequest.number!,
+        prNum: prNumber,
         stage: stage,
         creationTime: creationTime,
-        author: pullRequest.user!.login!,
+        author: prAuthor,
         remainingJobs: tasks.length,
         failedJobs: 0,
         jobs: {for (final task in tasks) task: TaskStatus.waitingForBackfill},
@@ -561,6 +569,7 @@ final class UnifiedCheckRun {
           result: PresubmitGuardConclusionResult.missing,
           remaining: presubmitGuard.remainingJobs,
           dashboardChecks: presubmitGuard.dashboardChecksJson,
+          mergeQueueGuard: presubmitGuard.mergeQueueGuardJson,
           failed: presubmitGuard.failedJobs,
           summary:
               'Check run "${state.jobName}" not present in ${guardId.stage} CI stage',
@@ -656,6 +665,7 @@ final class UnifiedCheckRun {
           result: PresubmitGuardConclusionResult.internalError,
           remaining: -1,
           dashboardChecks: null,
+          mergeQueueGuard: null,
           failed: failed,
           summary: 'Internal server error',
           details:
@@ -691,6 +701,7 @@ $stack
             : PresubmitGuardConclusionResult.internalError,
         remaining: remaining,
         dashboardChecks: presubmitGuard.dashboardChecksJson,
+        mergeQueueGuard: presubmitGuard.mergeQueueGuardJson,
         failed: failed,
         failedJobNames: valid ? presubmitGuard.failedJobNames : const [],
         summary: valid

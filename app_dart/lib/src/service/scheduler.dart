@@ -413,14 +413,14 @@ class Scheduler {
             tasks: [],
             pullRequest: pullRequest,
             config: _config,
-            dashboardChecks: isUnifiedCheckRun ? dashboardChecks : null,
-            mergeQueueGuard: isUnifiedCheckRun ? null : mergeQueueGuard,
+            dashboardChecks: dashboardChecks,
+            mergeQueueGuard: mergeQueueGuard,
           );
 
           await _runCiTestingStage(
             pullRequest: pullRequest,
-            dashboardChecks: isUnifiedCheckRun ? dashboardChecks : null,
-            mergeQueueGuard: isUnifiedCheckRun ? null : mergeQueueGuard,
+            dashboardChecks: dashboardChecks,
+            mergeQueueGuard: mergeQueueGuard,
             logCrumb: logCrumb,
 
             // The if-branch already skips the engine build phase.
@@ -454,8 +454,8 @@ class Scheduler {
             tasks: [...presubmitTriggerTargets.map((t) => t.name)],
             pullRequest: pullRequest,
             config: _config,
-            dashboardChecks: isUnifiedCheckRun ? dashboardChecks : null,
-            mergeQueueGuard: isUnifiedCheckRun ? null : mergeQueueGuard,
+            dashboardChecks: dashboardChecks,
+            mergeQueueGuard: mergeQueueGuard,
           );
 
           // Even though this appears to be an engine build, it could be a
@@ -481,7 +481,7 @@ class Scheduler {
               pullRequest: pullRequest,
               config: _config,
               dashboardChecks: dashboardChecks,
-              mergeQueueGuard: null,
+              mergeQueueGuard: mergeQueueGuard,
             );
           }
           engineArtifacts = const EngineArtifacts.noFrameworkTests(
@@ -492,8 +492,8 @@ class Scheduler {
           targets: presubmitTriggerTargets,
           pullRequest: pullRequest,
           engineArtifacts: engineArtifacts,
-          dashboardChecks: isUnifiedCheckRun ? dashboardChecks : null,
-          mergeQueueGuard: isUnifiedCheckRun ? null : mergeQueueGuard,
+          dashboardChecks: dashboardChecks,
+          mergeQueueGuard: mergeQueueGuard,
           stage: isFusion ? CiStage.fusionEngineBuild : CiStage.genericTests,
         );
       } on FormatException catch (e, s) {
@@ -530,6 +530,7 @@ class Scheduler {
     // there are situations (see code above) when it needs to be unlocked
     // immediately.
     if (unlockMergeGroup) {
+      await unlockMergeQueueGuard(slug, sha, mergeQueueGuard!);
       if (isUnifiedCheckRun) {
         await _githubChecksService.githubChecksUtil.updateCheckRun(
           _config,
@@ -538,8 +539,6 @@ class Scheduler {
           status: CheckRunStatus.completed,
           conclusion: CheckRunConclusion.success,
         );
-      } else {
-        await unlockMergeQueueGuard(slug, sha, mergeQueueGuard!);
       }
     }
     log.info(
@@ -657,12 +656,17 @@ class Scheduler {
     final logCrumb =
         'triggerTargetsForMergeGroup($slug, $headSha, ${isFusion ? 'real' : 'simulated'}'
         '${contentHash != null ? ', contentHash: $contentHash' : ''})';
-    log.info('$logCrumb: scheduling merge group checks');
+    final guards = await UnifiedCheckRun.getPresubmitGuardsForCommitSha(
+      firestoreService: _firestore,
+      slug: slug,
+      commitSha: headSha,
+    );
+    final isUnifiedCheckRun = guards.isNotEmpty;
 
     final lockResult = await lockMergeGroupChecks(
       slug,
       headSha,
-      isUnifiedCheckRun: false,
+      isUnifiedCheckRun: isUnifiedCheckRun,
     );
     final dashboardChecks = lockResult.dashboardChecks;
     final mergeQueueGuard = lockResult.mergeQueueGuard!;
@@ -671,6 +675,15 @@ class Scheduler {
     // close the merge group guard.
     if (!isFusion) {
       await unlockMergeQueueGuard(slug, headSha, mergeQueueGuard);
+      if (isUnifiedCheckRun) {
+        await _githubChecksService.githubChecksUtil.updateCheckRun(
+          _config,
+          slug,
+          dashboardChecks,
+          status: CheckRunStatus.completed,
+          conclusion: CheckRunConclusion.success,
+        );
+      }
       return;
     }
 
@@ -710,7 +723,10 @@ class Scheduler {
         stage: CiStage.fusionEngineBuild,
         tasks: [...availableTargets.map((t) => t.name)],
         config: _config,
-        dashboardChecks: dashboardChecks,
+        isUnifiedCheckRun: isUnifiedCheckRun,
+        prNum: guards.firstOrNull?.prNum,
+        author: guards.firstOrNull?.author,
+        dashboardChecks: isUnifiedCheckRun ? dashboardChecks : null,
         mergeQueueGuard: mergeQueueGuard,
       );
 
@@ -724,6 +740,9 @@ class Scheduler {
           sha: headSha,
         ),
         contentHash: contentHash,
+        guardCheckRunId: isUnifiedCheckRun ? dashboardChecks.id : null,
+        pullRequestNumber: guards.firstOrNull?.prNum,
+        stage: isUnifiedCheckRun ? CiStage.fusionEngineBuild : null,
       );
 
       // Do not unlock the merge group guard in successful case - that will be done by staging checks.
@@ -911,17 +930,8 @@ $s
           detailsUrl: isUnifiedCheckRun ? detailsUrl : null,
         );
 
-    if (isUnifiedCheckRun) {
-      // Skip MQ Guard
-      await _githubChecksService.githubChecksUtil.updateCheckRun(
-        _config,
-        slug,
-        mergeQueueGuard,
-        status: CheckRunStatus.completed,
-        conclusion: CheckRunConclusion.success,
-      );
-    } else {
-      // Skip Dashboard Checks
+    if (!isUnifiedCheckRun) {
+      // Skip Dashboard Checks for not unified flow.
       await _githubChecksService.githubChecksUtil.updateCheckRun(
         _config,
         slug,
@@ -1215,16 +1225,44 @@ detailsUrl: $detailsUrl
       // fail. The safest thing to do is to kick the pull request out of the queue
       // and let humans sort it out. If the group is left hanging in the queue, it
       // will hold up all other PRs that are trying to land.
-      if (check.isMergeGroup && !check.isUnifiedCheckRun) {
+      if (check.isMergeGroup) {
         await _completeArtifacts(check.sha, false);
-        final guard = checkRunFromString(stagingConclusion.mergeQueueGuard!);
-        await failGuardForMergeGroup(
-          slug: check.slug,
-          lock: guard,
-          headSha: check.sha,
-          summary: stagingConclusion.summary,
-          details: stagingConclusion.details,
+        final guard = checkRunFromString(
+          check.isUnifiedCheckRun
+              ? stagingConclusion.dashboardChecks!
+              : stagingConclusion.mergeQueueGuard!,
         );
+        if (check.isUnifiedCheckRun) {
+          final mqGuard =
+              checkRunFromString(stagingConclusion.mergeQueueGuard!);
+          await failGuardForMergeGroup(
+            slug: check.slug,
+            lock: mqGuard,
+            headSha: check.sha,
+            summary: stagingConclusion.summary,
+            details: stagingConclusion.details,
+          );
+          await _githubChecksService.githubChecksUtil.updateCheckRun(
+            _config,
+            check.slug,
+            guard,
+            status: CheckRunStatus.completed,
+            conclusion: CheckRunConclusion.actionRequired,
+            output: CheckRunOutput(
+              title: Config.kDashboardCheckName,
+              summary: stagingConclusion.summary,
+              text: stagingConclusion.details,
+            ),
+          );
+        } else {
+          await failGuardForMergeGroup(
+            slug: check.slug,
+            lock: guard,
+            headSha: check.sha,
+            summary: stagingConclusion.summary,
+            details: stagingConclusion.details,
+          );
+        }
       }
       return false;
     }
@@ -1245,16 +1283,33 @@ detailsUrl: $detailsUrl
       // * If this is a merge group: kick the pull request out of the queue, and
       //   let the author sort it out.
       // If its a unified check run we need to require action on the guard.
-      if (check.isMergeGroup && !check.isUnifiedCheckRun) {
+      if (check.isMergeGroup) {
         await _completeArtifacts(check.sha, false);
-        final guard = checkRunFromString(stagingConclusion.mergeQueueGuard!);
+        final mqGuard = checkRunFromString(stagingConclusion.mergeQueueGuard!);
         await failGuardForMergeGroup(
           slug: check.slug,
-          lock: guard,
+          lock: mqGuard,
           headSha: check.sha,
           summary: stagingConclusion.summary,
           details: stagingConclusion.details,
         );
+        if (check.isUnifiedCheckRun) {
+          final guard = checkRunFromString(stagingConclusion.dashboardChecks!);
+          final detailsUrl =
+              'https://flutter-dashboard.appspot.com/#/presubmit?repo=${check.slug.name}&sha=${check.sha}';
+          await _requireActionForGuard(
+            slug: check.slug,
+            lock: guard,
+            headSha: check.sha,
+            summary: _githubChecksService.getGithubSummaryWithHeader('''
+**[Failed Presubmit Jobs Details]($detailsUrl)**
+
+''', kDashboardChecksDescription),
+            details:
+                'Failed presubmit jobs:\n${stagingConclusion.failedJobNames.map((name) => "- `$name`").join("\n")}',
+            detailsUrl: detailsUrl,
+          );
+        }
       } else if (check.isUnifiedCheckRun) {
         final guard = checkRunFromString(stagingConclusion.dashboardChecks!);
         final detailsUrl =
@@ -1285,7 +1340,7 @@ detailsUrl: $detailsUrl
     //   enter the MQ).
     switch (stage) {
       case CiStage.fusionEngineBuild:
-        if (check.isMergeGroup && !check.isUnifiedCheckRun) {
+        if (check.isMergeGroup) {
           await _completeArtifacts(check.sha, true);
           await _closeMergeQueue(
             mergeQueueGuard: stagingConclusion.mergeQueueGuard!,
@@ -1294,11 +1349,20 @@ detailsUrl: $detailsUrl
             stage: CiStage.fusionEngineBuild,
             logCrumb: logCrumb,
           );
+          if (check.isUnifiedCheckRun) {
+            await _githubChecksService.githubChecksUtil.updateCheckRun(
+              _config,
+              check.slug,
+              checkRunFromString(stagingConclusion.dashboardChecks!),
+              status: CheckRunStatus.completed,
+              conclusion: CheckRunConclusion.success,
+            );
+          }
         } else {
           await _closeSuccessfulEngineBuildStage(
             checkRun: check.checkRun,
-            dashboardChecks: check.isUnifiedCheckRun ? stagingConclusion.dashboardChecks : null,
-            mergeQueueGuard: check.isUnifiedCheckRun ? null : stagingConclusion.mergeQueueGuard,
+            dashboardChecks: stagingConclusion.dashboardChecks,
+            mergeQueueGuard: stagingConclusion.mergeQueueGuard,
             slug: check.slug,
             sha: check.sha,
             logCrumb: logCrumb,
@@ -1306,8 +1370,8 @@ detailsUrl: $detailsUrl
         }
       case CiStage.fusionTests:
         await _closeSuccessfulTestStage(
-          dashboardChecks: check.isUnifiedCheckRun ? stagingConclusion.dashboardChecks : null,
-          mergeQueueGuard: check.isUnifiedCheckRun ? null : stagingConclusion.mergeQueueGuard,
+          dashboardChecks: stagingConclusion.dashboardChecks,
+          mergeQueueGuard: stagingConclusion.mergeQueueGuard,
           slug: check.slug,
           sha: check.sha,
           logCrumb: logCrumb,
@@ -1316,7 +1380,7 @@ detailsUrl: $detailsUrl
         if (check.isUnifiedCheckRun) {
           await _closeSuccessfulTestStage(
             dashboardChecks: stagingConclusion.dashboardChecks,
-            mergeQueueGuard: null,
+            mergeQueueGuard: stagingConclusion.mergeQueueGuard,
             slug: check.slug,
             sha: check.sha,
             logCrumb: logCrumb,

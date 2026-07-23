@@ -790,6 +790,9 @@ class LuciBuildService {
     required CommitRef commit,
     required List<Target> targets,
     String? contentHash,
+    int? guardCheckRunId,
+    int? pullRequestNumber,
+    CiStage? stage,
   }) async {
     final buildRequests = <bbv2.BatchRequest_Request>[];
 
@@ -821,6 +824,9 @@ class LuciBuildService {
         commit: commit,
         target: target,
         properties: properties,
+        guardCheckRunId: guardCheckRunId,
+        pullRequestNumber: pullRequestNumber,
+        stage: stage,
       );
       buildRequests.add(
         bbv2.BatchRequest_Request(scheduleBuild: scheduleBuildRequest),
@@ -1028,6 +1034,9 @@ class LuciBuildService {
     required Target target,
     int priority = kDefaultPriority,
     Map<String, Object?>? properties,
+    int? guardCheckRunId,
+    int? pullRequestNumber,
+    CiStage? stage,
   }) async {
     log.info(
       'Creating merge group schedule builder for ${target.name} on commit ${commit.sha}',
@@ -1039,6 +1048,9 @@ class LuciBuildService {
       commit: commit,
       checkRunId: checkRun.id!,
       checkSuiteId: checkRun.checkSuiteId!,
+      guardCheckRunId: guardCheckRunId,
+      pullRequestNumber: pullRequestNumber,
+      stage: stage,
     );
     final processedProperties = target.getProperties().cast<String, Object?>();
     processedProperties['git_branch'] = commit.branch;
