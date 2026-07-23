@@ -61,7 +61,7 @@ void main() {
           tasks: ['linux', 'mac'],
           config: config,
           pullRequest: pullRequest,
-          checkRun: checkRun,
+          dashboardChecks: checkRun,
         );
 
         final guardId = PresubmitGuard.documentIdFor(
@@ -100,7 +100,7 @@ void main() {
           tasks: ['linux', 'mac'],
           config: config,
           pullRequest: pullRequest,
-          checkRun: checkRun,
+          mergeQueueGuard: checkRun,
         );
 
         // Verify PresubmitGuard is NOT created
@@ -132,7 +132,7 @@ void main() {
 
         // Initialize documents
         final guard = PresubmitGuard(
-          checkRun: checkRun,
+          dashboardChecks: checkRun,
           headSha: sha,
           slug: slug,
           prNum: 1,
@@ -340,7 +340,7 @@ void main() {
 
         // Initialize documents
         final guard = PresubmitGuard(
-          checkRun: checkRun,
+          dashboardChecks: checkRun,
           headSha: sha,
           slug: slug,
           prNum: 1,
@@ -425,7 +425,7 @@ void main() {
 
         // Initialize documents
         final guard = PresubmitGuard(
-          checkRun: checkRun,
+          dashboardChecks: checkRun,
           headSha: sha,
           slug: slug,
           prNum: 1,
@@ -541,7 +541,7 @@ void main() {
       });
 
       final guard1 = PresubmitGuard(
-        checkRun: checkRun,
+        dashboardChecks: checkRun,
         headSha: sha,
         slug: slug,
         prNum: 1,
@@ -554,7 +554,7 @@ void main() {
       );
 
       final guard2 = PresubmitGuard(
-        checkRun: checkRun,
+        dashboardChecks: checkRun,
         headSha: sha,
         slug: slug,
         prNum: 1,
@@ -589,13 +589,13 @@ void main() {
       'getLatestPresubmitGuardByPullRequestNum returns latest guard',
       () async {
         final guard1 = generatePresubmitGuard(
-          checkRun: generateCheckRun(1),
+          dashboardChecks: generateCheckRun(1),
           headSha: 'abc',
           prNum: 5678,
           creationTime: 1000,
         );
         final guard2 = generatePresubmitGuard(
-          checkRun: generateCheckRun(2),
+          dashboardChecks: generateCheckRun(2),
           headSha: 'abc',
           prNum: 5678,
           creationTime: 2000,

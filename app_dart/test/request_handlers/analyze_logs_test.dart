@@ -65,7 +65,7 @@ void main() {
   test('Analyze logs successfully', () async {
     final checkRun = generateCheckRun(1, name: 'Linux A');
     final guard = generatePresubmitGuard(
-      checkRun: checkRun,
+      dashboardChecks: checkRun,
       jobs: {'Linux A': TaskStatus.failed},
       remainingJobs: 0,
     );
@@ -146,7 +146,7 @@ void main() {
   test('Fails for job not belonging to guard', () async {
     final checkRun = generateCheckRun(1, name: 'Linux A');
     final guard = generatePresubmitGuard(
-      checkRun: checkRun,
+      dashboardChecks: checkRun,
       jobs: {'Linux A': TaskStatus.failed},
       remainingJobs: 0,
     );
@@ -188,7 +188,7 @@ void main() {
   test('Fails for missing logs', () async {
     final checkRun = generateCheckRun(1, name: 'Linux A');
     final guard = generatePresubmitGuard(
-      checkRun: checkRun,
+      dashboardChecks: checkRun,
       jobs: {'Linux A': TaskStatus.failed},
       remainingJobs: 0,
     );

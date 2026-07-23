@@ -314,7 +314,7 @@ SuppressedTest generateSuppressedTest({
 PresubmitGuard generatePresubmitGuard({
   github.RepositorySlug? slug,
   int prNum = 123,
-  github.CheckRun? checkRun,
+  github.CheckRun? dashboardChecks,
   CiStage stage = CiStage.fusionTests,
   String headSha = 'abc',
   int creationTime = 1,
@@ -326,7 +326,7 @@ PresubmitGuard generatePresubmitGuard({
   return PresubmitGuard(
     slug: slug ?? github.RepositorySlug('flutter', 'flutter'),
     prNum: prNum,
-    checkRun: checkRun ?? generateCheckRun(1),
+    dashboardChecks: dashboardChecks ?? generateCheckRun(1),
     stage: stage,
     headSha: headSha,
     creationTime: creationTime,

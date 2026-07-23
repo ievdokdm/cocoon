@@ -2799,7 +2799,7 @@ void foo() {
           sha: '66d6bd9a3f79a36fe4f5178ccefbc781488a596c',
           stage: CiStage.fusionEngineBuild,
           tasks: [],
-          checkRunGuard: '',
+          mergeQueueGuard: '',
         );
         config.maxFilesChangedForSkippingEnginePhaseValue = 1;
         await testActions(

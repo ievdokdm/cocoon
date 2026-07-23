@@ -48,7 +48,7 @@ final class PresubmitGuardId extends AppDocumentId<PresubmitGuard> {
 /// 'Dashboard Checks' GitHub check.
 final class PresubmitGuard extends AppDocument<PresubmitGuard> {
   static const collectionId = 'presubmit_guards';
-  static const fieldCheckRun = 'check_run';
+  static const fieldDashboardChecks = 'dashboard_checks';
   static const fieldCheckRunId = 'check_run_id';
   static const fieldPrNum = 'pr_num';
   static const fieldSlug = 'slug';
@@ -111,7 +111,7 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
   factory PresubmitGuard.init({
     required RepositorySlug slug,
     required int prNum,
-    required CheckRun checkRun,
+    required CheckRun dashboardChecks,
     required CiStage stage,
     required String headSha,
     required int creationTime,
@@ -119,7 +119,7 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
     required int jobCount,
   }) {
     return PresubmitGuard(
-      checkRun: checkRun,
+      dashboardChecks: dashboardChecks,
       headSha: headSha,
       slug: slug,
       prNum: prNum,
@@ -136,7 +136,7 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
   }
 
   factory PresubmitGuard({
-    required CheckRun checkRun,
+    required CheckRun dashboardChecks,
     required String headSha,
     required RepositorySlug slug,
     required int prNum,
@@ -149,14 +149,14 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
   }) {
     return PresubmitGuard._(
       {
-        fieldCheckRunId: checkRun.id!.toValue(),
+        fieldCheckRunId: dashboardChecks.id!.toValue(),
         fieldPrNum: prNum.toValue(),
         fieldSlug: slug.fullName.toValue(),
         fieldStage: stage.name.toValue(),
         fieldHeadSha: headSha.toValue(),
         fieldCreationTime: creationTime.toValue(),
         fieldAuthor: author.toValue(),
-        fieldCheckRun: json.encode(checkRun.toJson()).toValue(),
+        fieldDashboardChecks: json.encode(dashboardChecks.toJson()).toValue(),
         fieldRemainingJobs: remainingJobs.toValue(),
         fieldFailedJobs: failedJobs.toValue(),
         if (jobs != null)
@@ -169,7 +169,7 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
       name: documentNameFor(
         slug: slug,
         prNum: prNum,
-        checkRunId: checkRun.id!,
+        checkRunId: dashboardChecks.id!,
         stage: stage,
       ),
     );
@@ -190,9 +190,9 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
         (k, v) => MapEntry(k, TaskStatus.from(v.stringValue!)),
       ) ??
       <String, TaskStatus>{};
-  CheckRun get checkRun {
+  CheckRun get dashboardChecks {
     final jsonData =
-        jsonDecode(fields[fieldCheckRun]!.stringValue!) as Map<String, Object?>;
+        jsonDecode(fields[fieldDashboardChecks]!.stringValue!) as Map<String, Object?>;
     // Workaround for https://github.com/SpinlockLabs/github.dart/issues/412
     if (jsonData['conclusion'] == 'null') {
       jsonData.remove('conclusion');
@@ -200,7 +200,7 @@ final class PresubmitGuard extends AppDocument<PresubmitGuard> {
     return CheckRun.fromJson(jsonData);
   }
 
-  String get checkRunJson => fields[fieldCheckRun]!.stringValue!;
+  String get dashboardChecksJson => fields[fieldDashboardChecks]!.stringValue!;
 
   /// The repository that this stage is recorded for.
   RepositorySlug get slug {

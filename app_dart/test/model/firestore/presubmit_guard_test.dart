@@ -41,7 +41,7 @@ void main() {
       final guard = PresubmitGuard.init(
         slug: slug,
         prNum: 123,
-        checkRun: checkRun,
+        dashboardChecks: checkRun,
         stage: CiStage.fusionEngineBuild,
         headSha: 'abc',
         creationTime: 1000,
@@ -58,7 +58,7 @@ void main() {
       expect(guard.author, 'author');
       expect(guard.remainingJobs, 2);
       expect(guard.failedJobs, 0);
-      expect(guard.checkRun.id, 456);
+      expect(guard.dashboardChecks.id, 456);
       expect(guard.fields[PresubmitGuard.fieldCheckRunId]!.integerValue, '456');
       expect(guard.fields[PresubmitGuard.fieldPrNum]!.integerValue, '123');
       expect(
@@ -75,7 +75,7 @@ void main() {
       final guard = PresubmitGuard.init(
         slug: slug,
         prNum: 123,
-        checkRun: checkRun,
+        dashboardChecks: checkRun,
         stage: CiStage.fusionEngineBuild,
         headSha: 'abc',
         creationTime: 1000,
@@ -100,7 +100,7 @@ void main() {
       final guard = PresubmitGuard.init(
         slug: slug,
         prNum: 123,
-        checkRun: checkRun,
+        dashboardChecks: checkRun,
         stage: CiStage.fusionEngineBuild,
         headSha: 'abc',
         creationTime: 1000,
@@ -120,7 +120,7 @@ void main() {
     test('parses properties from document name', () {
       // flutter_flutter_123_456_fusionEngineBuild
       final guard = PresubmitGuard(
-        checkRun: checkRun,
+        dashboardChecks: checkRun,
         headSha: 'abc',
         slug: slug,
         prNum: 123,

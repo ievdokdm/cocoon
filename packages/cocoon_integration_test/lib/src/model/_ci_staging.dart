@@ -46,9 +46,9 @@ final class CiStagingMatcher extends ModelMatcher<CiStaging> {
     );
   }
 
-  CiStagingMatcher hasCheckRunGuard(Object? matcherOr) {
+  CiStagingMatcher hasMergeQueueGuard(Object? matcherOr) {
     return CiStagingMatcher._(
-      _delegate.having((m) => m.checkRunGuard, 'checkRunGuard', matcherOr),
+      _delegate.having((m) => m.mergeQueueGuard, 'mergeQueueGuard', matcherOr),
     );
   }
 

@@ -251,7 +251,7 @@ final class GetPresubmitGuard extends PublicApiRequestHandler {
 
     var checkRunId = -1;
     if (ciStagings.isNotEmpty) {
-      final guardJsonStr = ciStagings.first.checkRunGuard;
+      final guardJsonStr = ciStagings.first.mergeQueueGuard;
       if (guardJsonStr.isNotEmpty) {
         try {
           if (jsonDecode(guardJsonStr) case {'id': final int id}) {

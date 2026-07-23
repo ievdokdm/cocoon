@@ -64,7 +64,7 @@ final class CiStaging extends AppDocument<CiStaging> {
   static const kRemainingField = 'remaining';
   static const kTotalField = 'total';
   static const kFailedField = 'failed_count';
-  static const kCheckRunGuardField = 'check_run_guard';
+  static const kMergeQueueGuardField = 'merge_queue_guard';
 
   @visibleForTesting
   static const fieldRepoFullPath = 'repository';
@@ -183,13 +183,13 @@ final class CiStaging extends AppDocument<CiStaging> {
   int get failed => int.parse(fields[kFailedField]!.integerValue!);
 
   /// The check_run to complete when this stage is closed.
-  String get checkRunGuard => fields[kCheckRunGuardField]!.stringValue!;
+  String get mergeQueueGuard => fields[kMergeQueueGuardField]!.stringValue!;
 
   static const keysOfImport = [
     kRemainingField,
     kTotalField,
     kFailedField,
-    kCheckRunGuardField,
+    kMergeQueueGuardField,
     fieldRepoFullPath,
     fieldCommitSha,
     fieldStage,
@@ -232,7 +232,7 @@ final class CiStaging extends AppDocument<CiStaging> {
     var failed = -1;
     var total = -1;
     var valid = false;
-    String? checkRunGuard;
+    String? mergeQueueGuard;
     TaskConclusion? recordedConclusion;
 
     late final Document doc;
@@ -287,7 +287,7 @@ final class CiStaging extends AppDocument<CiStaging> {
         return PresubmitGuardConclusion(
           result: PresubmitGuardConclusionResult.missing,
           remaining: remaining,
-          checkRunGuard: null,
+          mergeQueueGuard: null,
           failed: failed,
           summary: 'Check run "$checkRun" not present in $stage CI stage',
           details: 'Change $changeCrumb',
@@ -336,7 +336,7 @@ final class CiStaging extends AppDocument<CiStaging> {
       }
 
       // Record the json string of the check_run to complete.
-      checkRunGuard = fields[kCheckRunGuardField]?.stringValue;
+      mergeQueueGuard = fields[kMergeQueueGuardField]?.stringValue;
 
       // All checks pass. "valid" is only set to true if there was a change in either the remaining or failed count.
       log.info(
@@ -353,7 +353,7 @@ final class CiStaging extends AppDocument<CiStaging> {
         return PresubmitGuardConclusion(
           result: PresubmitGuardConclusionResult.internalError,
           remaining: -1,
-          checkRunGuard: null,
+          mergeQueueGuard: null,
           failed: failed,
           summary: 'Internal server error',
           details:
@@ -391,7 +391,7 @@ $stack
           ? PresubmitGuardConclusionResult.ok
           : PresubmitGuardConclusionResult.internalError,
       remaining: remaining,
-      checkRunGuard: checkRunGuard ?? '',
+      mergeQueueGuard: mergeQueueGuard ?? '',
       failed: failed,
       summary: valid
           ? 'All tests passed'
@@ -412,7 +412,7 @@ For CI stage $stage:
   /// Initializes a new document for the given [tasks] in Firestore so that stage-tracking can succeed.
   ///
   /// The list of tasks will be written as fields of a document with additional fields for tracking the total
-  /// number of tasks, remaining count. It is required to include [checkRunGuard] as a json encoded [CheckRun] as this
+  /// number of tasks, remaining count. It is required to include [mergeQueueGuard] as a json encoded [CheckRun] as this
   /// will be used to unlock any check runs blocking progress.
   ///
   /// Returns the created document or throws an error.
@@ -422,7 +422,7 @@ For CI stage $stage:
     required String sha,
     required CiStage stage,
     required List<String> tasks,
-    required String checkRunGuard,
+    required String mergeQueueGuard,
   }) async {
     final logCrumb =
         'initializeDocument(${slug.owner}_${slug.name}_${sha}_$stage, ${tasks.length} tasks)';
@@ -431,7 +431,7 @@ For CI stage $stage:
       kTotalField: tasks.length.toValue(),
       kRemainingField: tasks.length.toValue(),
       kFailedField: 0.toValue(),
-      kCheckRunGuardField: checkRunGuard.toValue(),
+      kMergeQueueGuardField: mergeQueueGuard.toValue(),
       fieldRepoFullPath: slug.fullName.toValue(),
       fieldCommitSha: sha.toValue(),
       fieldStage: stage.name.toValue(),

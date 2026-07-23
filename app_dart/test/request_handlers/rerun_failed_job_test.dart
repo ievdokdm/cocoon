@@ -55,7 +55,7 @@ void main() {
   test('Re-run successful failed job', () async {
     final checkRun = generateCheckRun(1, name: 'Linux A');
     final guard = generatePresubmitGuard(
-      checkRun: checkRun,
+      dashboardChecks: checkRun,
       jobs: {'Linux A': TaskStatus.failed},
       remainingJobs: 0,
     );
@@ -93,7 +93,7 @@ void main() {
         targets: anyNamed('targets'),
         pullRequest: anyNamed('pullRequest'),
         engineArtifacts: anyNamed('engineArtifacts'),
-        checkRunGuard: anyNamed('checkRunGuard'),
+        dashboardChecks: anyNamed('dashboardChecks'),
         stage: anyNamed('stage'),
       ),
     ).thenAnswer((_) async => []);
@@ -113,7 +113,7 @@ void main() {
         targets: argThat(containsPair(targetA, 2), named: 'targets'),
         pullRequest: anyNamed('pullRequest'),
         engineArtifacts: anyNamed('engineArtifacts'),
-        checkRunGuard: anyNamed('checkRunGuard'),
+        dashboardChecks: anyNamed('dashboardChecks'),
         stage: anyNamed('stage'),
       ),
     ).called(1);
@@ -128,7 +128,7 @@ void main() {
   test('Re-run successful failed job with default owner/repo', () async {
     final checkRun = generateCheckRun(1, name: 'Linux A');
     final guard = generatePresubmitGuard(
-      checkRun: checkRun,
+      dashboardChecks: checkRun,
       jobs: {'Linux A': TaskStatus.failed},
       remainingJobs: 0,
     );
@@ -166,7 +166,7 @@ void main() {
         targets: anyNamed('targets'),
         pullRequest: anyNamed('pullRequest'),
         engineArtifacts: anyNamed('engineArtifacts'),
-        checkRunGuard: anyNamed('checkRunGuard'),
+        dashboardChecks: anyNamed('dashboardChecks'),
         stage: anyNamed('stage'),
       ),
     ).thenAnswer((_) async => []);
@@ -190,7 +190,7 @@ void main() {
 
   test('Re-run fails for PR mismatch', () async {
     final checkRun = generateCheckRun(1);
-    final guard = generatePresubmitGuard(checkRun: checkRun);
+    final guard = generatePresubmitGuard(dashboardChecks: checkRun);
     firestore.putDocument(guard);
 
     tester.requestData = {
@@ -205,7 +205,7 @@ void main() {
 
   test('Re-run fails for non-failed build', () async {
     final checkRun = generateCheckRun(1, name: 'Linux A');
-    final guard = generatePresubmitGuard(checkRun: checkRun);
+    final guard = generatePresubmitGuard(dashboardChecks: checkRun);
     firestore.putDocument(guard);
 
     final pullRequest = generatePullRequest(headSha: guard.commitSha);

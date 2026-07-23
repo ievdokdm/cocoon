@@ -85,7 +85,7 @@ void main() {
         slug: slug,
         sha: '1234',
         stage: CiStage.fusionEngineBuild,
-        checkRunGuard: 'check-run-guard',
+        mergeQueueGuard: 'check-run-guard',
         tasks: ['test'],
       );
     });
@@ -135,7 +135,7 @@ void main() {
             CiStaging.kRemainingField: 1.toValue(),
             CiStaging.kTotalField: 3.toValue(),
             CiStaging.kFailedField: 0.toValue(),
-            CiStaging.kCheckRunGuardField: '{}'.toValue(),
+            CiStaging.kMergeQueueGuardField: '{}'.toValue(),
             'Linux build_test': Value(
               stringValue: TaskConclusion.scheduled.name,
             ),
@@ -163,7 +163,7 @@ void main() {
           remaining: 1,
           result: PresubmitGuardConclusionResult.missing,
           failed: 0,
-          checkRunGuard: null,
+          mergeQueueGuard: null,
           summary: 'Check run "test" not present in engine CI stage',
           details: 'Change flutter_flutter_1234',
         ),
@@ -178,7 +178,7 @@ void main() {
             CiStaging.kTotalField: 1.toValue(),
             CiStaging.kRemainingField: 1.toValue(),
             CiStaging.kFailedField: 0.toValue(),
-            CiStaging.kCheckRunGuardField: '{}'.toValue(),
+            CiStaging.kMergeQueueGuardField: '{}'.toValue(),
             'Linux build_test': Value(
               stringValue: TaskConclusion.scheduled.name,
             ),
@@ -207,7 +207,7 @@ void main() {
             CiStaging.kRemainingField: 1.toValue(),
             CiStaging.kFailedField: 0.toValue(),
             CiStaging.kTotalField: 1.toValue(),
-            CiStaging.kCheckRunGuardField: '{}'.toValue(),
+            CiStaging.kMergeQueueGuardField: '{}'.toValue(),
             'Linux build_test': Value(
               stringValue: TaskConclusion.scheduled.name,
             ),
@@ -231,7 +231,7 @@ void main() {
           remaining: 0,
           result: PresubmitGuardConclusionResult.ok,
           failed: 0,
-          checkRunGuard: '{}',
+          mergeQueueGuard: '{}',
           summary: 'All tests passed',
           details: '''
 For CI stage engine:
@@ -251,7 +251,7 @@ For CI stage engine:
             CiStaging.kRemainingField: 1.toValue(),
             CiStaging.kFailedField: 0.toValue(),
             CiStaging.kTotalField: 1.toValue(),
-            CiStaging.kCheckRunGuardField: '{}'.toValue(),
+            CiStaging.kMergeQueueGuardField: '{}'.toValue(),
             'MacOS build_test': TaskConclusion.success.name.toValue(),
           },
         ),
@@ -273,7 +273,7 @@ For CI stage engine:
           remaining: 1,
           result: PresubmitGuardConclusionResult.internalError,
           failed: 0,
-          checkRunGuard: '{}',
+          mergeQueueGuard: '{}',
           summary: 'Not a valid state transition for MacOS build_test',
           details:
               'Attempted to transition the state of check run MacOS build_test from "success" to "unknown".',
@@ -289,7 +289,7 @@ For CI stage engine:
             CiStaging.kRemainingField: 1.toValue(),
             CiStaging.kFailedField: 1.toValue(),
             CiStaging.kTotalField: 1.toValue(),
-            CiStaging.kCheckRunGuardField: '{}'.toValue(),
+            CiStaging.kMergeQueueGuardField: '{}'.toValue(),
             'MacOS build_test': TaskConclusion.failure.name.toValue(),
           },
         ),
@@ -312,7 +312,7 @@ For CI stage engine:
           remaining: 1,
           result: PresubmitGuardConclusionResult.ok,
           failed: 0,
-          checkRunGuard: '{}',
+          mergeQueueGuard: '{}',
           summary: 'All tests passed',
           details: '''
 For CI stage engine:
@@ -332,7 +332,7 @@ For CI stage engine:
             CiStaging.kRemainingField: 1.toValue(),
             CiStaging.kFailedField: 1.toValue(),
             CiStaging.kTotalField: 1.toValue(),
-            CiStaging.kCheckRunGuardField: '{}'.toValue(),
+            CiStaging.kMergeQueueGuardField: '{}'.toValue(),
             'MacOS build_test': TaskConclusion.failure.name.toValue(),
           },
         ),
@@ -355,7 +355,7 @@ For CI stage engine:
           remaining: 1,
           result: PresubmitGuardConclusionResult.ok,
           failed: 0,
-          checkRunGuard: '{}',
+          mergeQueueGuard: '{}',
           summary: 'All tests passed',
           details: '''
 For CI stage engine:
@@ -375,7 +375,7 @@ For CI stage engine:
             CiStaging.kRemainingField: 1.toValue(),
             CiStaging.kFailedField: 1.toValue(),
             CiStaging.kTotalField: 1.toValue(),
-            CiStaging.kCheckRunGuardField: '{}'.toValue(),
+            CiStaging.kMergeQueueGuardField: '{}'.toValue(),
             'MacOS build_test': TaskConclusion.failure.name.toValue(),
           },
         ),
@@ -397,7 +397,7 @@ For CI stage engine:
           remaining: 1,
           result: PresubmitGuardConclusionResult.internalError,
           failed: 1,
-          checkRunGuard: '{}',
+          mergeQueueGuard: '{}',
           summary: 'Not a valid state transition for MacOS build_test',
           details:
               'Attempted to transition the state of check run MacOS build_test from "failure" to "failure".',
@@ -413,7 +413,7 @@ For CI stage engine:
             CiStaging.kRemainingField: 1.toValue(),
             CiStaging.kFailedField: 0.toValue(),
             CiStaging.kTotalField: 1.toValue(),
-            CiStaging.kCheckRunGuardField: '{}'.toValue(),
+            CiStaging.kMergeQueueGuardField: '{}'.toValue(),
             'MacOS build_test': TaskConclusion.success.name.toValue(),
           },
         ),
@@ -435,7 +435,7 @@ For CI stage engine:
           remaining: 1,
           result: PresubmitGuardConclusionResult.ok,
           failed: 1,
-          checkRunGuard: '{}',
+          mergeQueueGuard: '{}',
           summary: 'All tests passed',
           details: '''
 For CI stage engine:
@@ -451,7 +451,7 @@ For CI stage engine:
   group('initializeDocument', () {
     final slug = RepositorySlug('flutter', 'flutter');
     final tasks = <String>['task1', 'task2'];
-    const checkRunGuard = '{"id": "check_run_id"}';
+    const mergeQueueGuard = '{"id": "check_run_id"}';
     const sha = '1234abc';
     const stage = CiStage.fusionTests;
 
@@ -462,7 +462,7 @@ For CI stage engine:
         sha: sha,
         stage: stage,
         tasks: tasks,
-        checkRunGuard: checkRunGuard,
+        mergeQueueGuard: mergeQueueGuard,
       );
       expect(
         createdDoc.name,
@@ -476,7 +476,7 @@ For CI stage engine:
               .hasTotal(tasks.length)
               .hasRemaining(tasks.length)
               .hasFailed(0)
-              .hasCheckRunGuard(checkRunGuard)
+              .hasMergeQueueGuard(mergeQueueGuard)
               .hasSlug(slug)
               .hasSha(sha)
               .hasStage(stage)
@@ -497,7 +497,7 @@ For CI stage engine:
           sha: sha,
           stage: stage,
           tasks: tasks,
-          checkRunGuard: checkRunGuard,
+          mergeQueueGuard: mergeQueueGuard,
         ),
         throwsA(isA<Exception>()),
       );
