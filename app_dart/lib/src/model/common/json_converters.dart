@@ -133,13 +133,11 @@ class SafeCheckSuiteConverter
     if (json == null) {
       return null;
     }
-    final normalized = Map<String, dynamic>.from(json);
-    if (normalized.containsKey('conclusion') &&
-        normalized['conclusion'] != null) {
-      final conclusion = _safeCheckRunConclusionFromJson(
-        normalized['conclusion'] as String?,
-      );
-      normalized['conclusion'] = conclusion?.value;
+    final normalized = Map<String, Object?>.from(json);
+    if (normalized case {'conclusion': final String? conclusion}) {
+      normalized['conclusion'] = _safeCheckRunConclusionFromJson(
+        conclusion,
+      )?.value;
     }
     return CheckSuite.fromJson(normalized);
   }
