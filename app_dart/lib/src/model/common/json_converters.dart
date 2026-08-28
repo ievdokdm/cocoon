@@ -145,7 +145,6 @@ class SafeCheckSuiteConverter
   }
 
   @override
-  @override
   Map<String, dynamic>? toJson(CheckSuite? object) {
     if (object == null) {
       return null;
@@ -154,8 +153,8 @@ class SafeCheckSuiteConverter
       'id': object.id,
       'head_sha': object.headSha,
       'head_branch': object.headBranch,
-      'conclusion': object.conclusion?.value,
-      'pull_requests': object.pullRequests?.map((pr) => pr.toJson()).toList(),
+      'conclusion': object.conclusion.value,
+      'pull_requests': object.pullRequests.map((pr) => pr.toJson()).toList(),
     };
   }
 
